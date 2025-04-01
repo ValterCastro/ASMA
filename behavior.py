@@ -1,57 +1,57 @@
 from spade.behaviour import CyclicBehaviour
 from spade.behaviour import FSMBehaviour, State
 from spade.message import Message
+from announcement_types import AnnouncementType
+from central import central
 import asyncio
 
-STATE_ONE = "STATE_ONE"
-STATE_TWO = "STATE_TWO"
-STATE_THREE = "STATE_THREE"
+STATE_ONE = "CALL_FOR_PROPOSAL"
+STATE_TWO = "REFUSE"
+STATE_THREE = "PROPOSE"
 
 class EmptyGarbage(CyclicBehaviour):
         async def on_start(self):
             print("Starting announcement . . .")
+            
+        async def run(self):
             fsm = ContractNetFSMBehaviour()
             fsm.add_state(name=STATE_ONE, state=StateOne(), initial=True)
             fsm.add_state(name=STATE_TWO, state=StateTwo())
             fsm.add_state(name=STATE_THREE, state=StateThree())
             fsm.add_transition(source=STATE_ONE, dest=STATE_TWO)
-            fsm.add_transition(source=STATE_TWO, dest=STATE_THREE)
-            self.agent.add_behaviour(fsm)
-            self.counter = 0
+            fsm.add_transition(source=STATE_ONE, dest=STATE_THREE)
+            
+            self.agent.current_msg_type = AnnouncementType.SET_VARIABLE_LESS_THAN_OR_EQUAL.value
 
-        async def run(self):
-            print("Counter: {}".format(self.counter))
-            self.counter += 1
+            self.agent.add_behaviour(fsm)
             await asyncio.sleep(5)
             
-class ContractNetFSMBehaviour(FSMBehaviour):
-    async def on_start(self):
-        print(f"FSM starting at initial state {self.current_state}")
-
-    async def on_end(self):
-        print(f"FSM finished at state {self.current_state}")
-        #await self.agent.stop()
-        
 class StateOne(State):
     async def run(self):
-        print("I'm at state one (initial state)")
-        msg = Message(to=str(self.agent.jid))
-        msg.body = "msg_from_state_one_to_state_three"
-        await self.send(msg)
-        self.set_next_state(STATE_TWO)
-
+        print("I'm at state one")
+        for key, item in central.contractors.items():    
+            msg = Message(to=str(key))
+            msg.set_metadata("type", AnnouncementType.SET_VARIABLE_LESS_THAN_OR_EQUAL.value)
+            msg.set_metadata("requirements", "waste_lvl<=5")
+            msg.set_metadata("deadline", "5")
+            msg.set_metadata("eval_criteria", "waste_lvl_before,waste_lvl_after,distance")
+            msg.body = f"Need to drop waste from bin {self.agent.bin_number}."
+            self.set_next_state(STATE_TWO) if not item.isAvailable() else self.set_next_state(STATE_THREE)         
+                
+        
 
 class StateTwo(State):
     async def run(self):
-        print("I'm at state two")
-        self.set_next_state(STATE_THREE)
-
+        print("I REFUSE")
+        
 
 class StateThree(State):
     async def run(self):
-        print("I'm at state three (final state)")
-        msg = await self.receive(timeout=5)
-        print(f"State Three received message {msg.body}")
-        # no final state is setted, since this is a final state
+        print("I PROPOSE")
+        msg = Message(to=str(self.agent.jid))
+        msg.set_metadata("type", "Proposal")
+        msg.set_metadata("", "Proposal")
 
-        
+class ContractNetFSMBehaviour(FSMBehaviour):
+    async def on_start(self):
+        print("FSM starting")

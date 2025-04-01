@@ -1,5 +1,5 @@
 import getpass
-from spade_bdi.bdi import BDIAgent
+#from spade_bdi.bdi import BDIAgent
 import spade
 import asyncio
 from spade.agent import Agent
@@ -58,7 +58,7 @@ class Truck(Agent):
             # Add manager
             assert self.name not in central.contractors, f"{self.name} is already in central.contractors"
             self.is_contractor = True
-            central.contractors.update({self.name: self})
+            central.contractors.update({self.jid: self})
         
         
         
@@ -71,6 +71,9 @@ class Truck(Agent):
         assert hasattr(self, 'is_contractor'), "Truck must have a is_contractor attribute"
         assert isinstance(self.is_contractor, bool), "self.is_contractor must be a boolean"
         return self.is_contractor
+    
+    def isAvailable(self):
+        return True
 
 # server = "asma@yax.im"
 # password = "1234"
