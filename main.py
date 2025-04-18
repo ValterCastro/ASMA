@@ -13,7 +13,7 @@ from behavior import EmptyGarbage
 
 
 async def main():
-    logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
     
     truck_agent = Truck("asma@draugr.de/1", "1234")  
     await truck_agent.start(auto_register=True)

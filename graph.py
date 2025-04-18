@@ -1,55 +1,58 @@
 import networkx as nx
-import random
-import os
+from math import radians, cos, sin, asin, sqrt
 
 # Parameters
-n = 10  # Number of nodes
-m = 15  # Number of edges (adjustable, but must be >= n-1 for connectivity)
-num_graphs = 10  # Number of different graphs to generate
+# bin and depot locations from the spec
+locations = {
+    "A": (41.1627, -8.6115),
+    "B": (41.1654, -8.6110),
+    "C": (41.1646, -8.6106),
+    "D": (41.1603, -8.6100),
+    "E": (41.1658, -8.6094),
+    "F": (41.1635, -8.6089),
+    "G": (41.1626, -8.6093),
+    "H": (41.1622, -8.6072),
+    "I": (41.1609, -8.6075),
+    "J": (41.1655, -8.6062),
+    "K": (41.1621, -8.6053),
+    "L": (41.1600, -8.6027),
+    "M": (41.1641, -8.6007),
+    "N": (41.1628, -8.5997),
+    "O": (41.1614, -8.6008),
+    "P": (41.1597, -8.6046),
+    "X": (41.1693, -8.6026)  # Depot
+}
 
-# Ensure the output directory exists
-output_dir = "graph_files"
-os.makedirs(output_dir, exist_ok=True)
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371000  # Earth radius in meters
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+    dlat = lat2 - lat1 
+    dlon = lon2 - lon1 
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a)) 
+    return R * c
 
-# Function to generate a connected random graph
-def generate_connected_graph(nodes, edges, seed):
-    while True:
-        # Set the random seed for reproducibility
-        random.seed(seed)
-        G = nx.gnm_random_graph(nodes, edges, seed=seed)
-        # Check if the graph is connected
-        if nx.is_connected(G):
-            return G
-        # If not connected, increment seed and try again
-        seed += 1
 
-# Generate and save 10 different graphs
-graphs = []
-base_seed = 42  # Starting seed for reproducibility
+G = nx.Graph()
 
-for i in range(num_graphs):
-    seed = base_seed + i  # Unique seed for each graph
-    G = generate_connected_graph(n, m, seed)
-    graphs.append(G)
-    
-    # Get reachability info (adjacency list: which nodes each node can reach directly)
-    reachability = {node: list(G.neighbors(node)) for node in G.nodes()}
-    
-    # Save the graph as an edge list
-    filename = f"{output_dir}/graph_{i+1}.edgelist"
-    nx.write_edgelist(G, filename, data=False)
-    
-    # Optionally save reachability info to a separate file
-    reachability_filename = f"{output_dir}/graph_{i+1}_reachability.txt"
-    with open(reachability_filename, 'w') as f:
-        for node, neighbors in reachability.items():
-            f.write(f"Node {node}: {neighbors}\n")
-    
-    print(f"Generated graph {i+1} with seed {seed}, saved to {filename}")
-    print(f"Reachability info saved to {reachability_filename}")
-    print(f"Number of edges: {G.number_of_edges()}, Connected: {nx.is_connected(G)}")
-    print("-" * 50)
+# Add nodes
+for name, coords in locations.items():
+    G.add_node(name, pos=coords)
 
-# Example: How to read a graph back from a file
-# G_loaded = nx.read_edgelist("graph_files/graph_1.edgelist", nodetype=int)
-# print("Loaded graph 1 edges:", list(G_loaded.edges()))
+# Add edges with Haversine distance as weight
+for src_name, src_coords in locations.items():
+    for dst_name, dst_coords in locations.items():
+        if src_name != dst_name:
+            distance = haversine(*src_coords, *dst_coords)
+            G.add_edge(src_name, dst_name, weight=distance)
+
+# Save the graph to a file
+nx.write_weighted_edgelist(G, "graph_files/proj1.edgelist")
+
+if __name__ == "__main__":
+    # Print the graph to verify
+    print("Nodes of the graph:")
+    print(G.nodes(data=True))
+    print("\nEdges of the graph:")
+    print(G.edges(data=True))
+    print("\nGraph saved to porto_graph.edgelist")
