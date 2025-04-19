@@ -4,7 +4,7 @@ class Central():
         self.managers = {}
         self.contractors = {}
         
-        
+central = Central()        
 
         
         

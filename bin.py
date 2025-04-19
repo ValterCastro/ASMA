@@ -7,7 +7,8 @@ class Bin(Agent):
     bin_number = 1
     waste_lvl = 10
     name = "bin"
-    is_manager = False        
+    is_manager = False     
+    current_message_type = ""
         
     async def setup(self):
         self.variables = {
