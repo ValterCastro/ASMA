@@ -12,16 +12,17 @@ from behavior import EmptyGarbage
 
 
 
+
 async def main():
-    logging.basicConfig(level=logging.DEBUG)
+    #logging.basicConfig(level=logging.DEBUG)
     
-    truck_agent = Truck("asma@draugr.de/1", "1234")  
+    truck_agent = Truck("asma@draugr.de/1", "1234")
     await truck_agent.start(auto_register=True)
     await asyncio.sleep(1)
     truck_agent.setContractor(central)
     print(f"Is {truck_agent.name} a contractor? {truck_agent.getContractor()}")
     
-    bin_agent = Bin("asma@draugr.de/0", "1234")  
+    bin_agent = Bin("asma@draugr.de/0", "1234")
     await bin_agent.start(auto_register=True)
     await asyncio.sleep(1)  
     bin_agent.setManager(central)
@@ -36,4 +37,7 @@ async def main():
     
 
 if __name__ == "__main__":
+    
+    print(spade.__version__)
+    
     spade.run(main())
