@@ -7,14 +7,18 @@ from spade.agent import Agent
 class Truck(Agent):
     
     truck_number = 1
-    waste_lvl = 0
+    current_waste_lvl = 0
+    capacity = 80
+    velocity = 5
     name = "truck"
     is_contractor = False
     is_manager = False
     
     async def setup(self):
         self.variables = {
-            "waste_lvl": self.waste_lvl,  
+            "current_waste_lvl": self.current_waste_lvl,
+            "capacity": self.capacity, 
+            "velocity": self.velocity
         }
         self.name = self.name + str(self.truck_number)
         Truck.truck_number += 1
