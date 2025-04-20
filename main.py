@@ -98,15 +98,19 @@ async def _():
     await bin_agent1.start(auto_register=True)
     await asyncio.sleep(1)
     bin_agent1.setManager(central)
-    # print(f"Is {bin_agent.name} a manager? {bin_agent.getManager()}")
-
-    # Add agents to graph
-
-    NODES["X"].truck = truck_agent10
-    NODES["A"].truck = truck_agent11
-    NODES["L"].bin = bin_agent0
-    NODES["M"].bin = bin_agent1
-
+    #print(f"Is {bin_agent.name} a manager? {bin_agent.getManager()}")
+    
+    
+    
+    
+    
+    # Add agents to graph 
+    
+    truck_agent10.latest_location = nodes['X']
+    truck_agent11.latest_location = nodes['A']
+    nodes['L'].bin = bin_agent0
+    nodes['M'].bin = bin_agent1
+    
     # Behavior empty garbage
 
     behavior1 = EmptyGarbage()
@@ -115,7 +119,6 @@ async def _():
 
     await wait_until_finished(bin_agent0)
     await wait_until_finished(bin_agent1)
-
 
 async def scenario_2():
     # Scenario 2 logic here
