@@ -8,6 +8,10 @@ import asyncio
 STATE_ONE = "CALL_FOR_PROPOSAL"
 STATE_TWO = "REFUSE"
 STATE_THREE = "PROPOSE"
+STATE_FOUR = "ACCEPT_PROPOSAL"
+STATE_FIVE = "INFORM:DONE"
+STATE_SIX = "FAILURE"
+
 
 class EmptyGarbage(CyclicBehaviour):
         async def on_start(self):
@@ -20,6 +24,9 @@ class EmptyGarbage(CyclicBehaviour):
             fsm.add_state(name=STATE_THREE, state=StateThree())
             fsm.add_transition(source=STATE_ONE, dest=STATE_TWO)
             fsm.add_transition(source=STATE_ONE, dest=STATE_THREE)
+            fsm.add_transition(source=STATE_THREE, dest=STATE_TWO)
+            fsm.add_transition(source=STATE_THREE, dest=STATE_FOUR)
+            
             
             self.agent.current_msg_type = AnnouncementType.SET_VARIABLE_LESS_THAN_OR_EQUAL.value
 
@@ -51,6 +58,18 @@ class StateThree(State):
         msg = Message(to=str(self.agent.jid))
         msg.set_metadata("type", "Proposal")
         msg.set_metadata("", "Proposal")
+        
+class StateFour(State):
+    async def run(self):
+        print("I ACCEPT PROPOSAL")
+        
+class StateFive(State):
+    async def run(self):
+        print("INFORM:DONE")
+        
+class StateSix(State):
+    async def run(self):
+        print("FAILURE")
 
 class ContractNetFSMBehaviour(FSMBehaviour):
     async def on_start(self):
