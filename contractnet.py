@@ -2,9 +2,13 @@ import spade
 from spade.agent import Agent
 from spade.behaviour import FSMBehaviour, State
 from spade.message import Message
+from dijkstra import dijkstra
+from main import nodes, edges
+import asyncio
 
 STATE_ONE = "STATE_ONE"
 STATE_TWO = "STATE_TWO"
+STATE_MOVE = "STATE_MOVE"
 STATE_THREE = "STATE_THREE"
 
 
@@ -29,7 +33,29 @@ class StateOne(State):
 class StateTwo(State):
     async def run(self):
         print("I'm at state two")
+        self.set_next_state(STATE_MOVE)
+
+
+class MoveToBinState(State):
+    async def run(self):
+        print("STATE MOVE: Moving to target bin.")
+
+        # Calculate time using Dijkstra
+        start_node = self.agent.getLocation().id if self.agent.getLocation() else "X"
+        target_node = self.agent.target_bin_id
+
+        dist_map = dijkstra(start_node, nodes)
+        distance = dist_map[target_node]
+        travel_time = distance / self.agent.velocity
+
+        print(f"{self.agent.name} traveling from {start_node} to {target_node}: {distance:.2f}m, ETA: {travel_time:.2f}s")
+        await asyncio.sleep(travel_time)
+
+        # Update location
+        self.agent.updateLocation(nodes[target_node])
+        print(f"{self.agent.name} arrived at {target_node}")
         self.set_next_state(STATE_THREE)
+
 
 
 class StateThree(State):
@@ -45,9 +71,11 @@ class FSMAgent(Agent):
         fsm = ExampleFSMBehaviour()
         fsm.add_state(name=STATE_ONE, state=StateOne(), initial=True)
         fsm.add_state(name=STATE_TWO, state=StateTwo())
+        fsm.add_state(name=STATE_MOVE, state=MoveToBinState())
         fsm.add_state(name=STATE_THREE, state=StateThree())
         fsm.add_transition(source=STATE_ONE, dest=STATE_TWO)
-        fsm.add_transition(source=STATE_TWO, dest=STATE_THREE)
+        fsm.add_transition(source=STATE_TWO, dest=STATE_MOVE)
+        fsm.add_transition(source=STATE_MOVE, dest=STATE_THREE)
         self.add_behaviour(fsm)
 
 
