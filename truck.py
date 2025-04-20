@@ -13,6 +13,7 @@ class Truck(Agent):
     name = "truck"
     is_contractor = False
     is_manager = False
+    latest_location = None
     
     async def setup(self):
         self.variables = {
@@ -21,6 +22,7 @@ class Truck(Agent):
             "velocity": self.velocity
         }
         self.name = self.name + str(self.truck_number)
+        self.latest_location = None
         Truck.truck_number += 1
         self.name = self.name + str(Truck.truck_number)
         # Called when the agent starts
@@ -78,6 +80,15 @@ class Truck(Agent):
     
     def isAvailable(self):
         return True
+    
+    def updateLocation(self, location):
+        assert location is not None, "Location cannot be None"
+        self.latest_location = location
+        print(f"Truck {self.name} updated location to {location}")
+
+    def getLocation(self):
+        assert hasattr(self, 'latest_location'), "Truck must have a latest_location attribute"
+        return self.latest_location
 
 # server = "asma@yax.im"
 # password = "1234"

@@ -11,6 +11,7 @@ from spade import wait_until_finished
 from behavior import EmptyGarbage
 from node import Node
 from edge import Edge
+from dijkstra import dijkstra
 
 nodes = {}
 edges = {}
@@ -51,8 +52,8 @@ async def main():
     
     # Add agents to graph 
     
-    nodes['X'].truck = truck_agent10
-    nodes['A'].truck = truck_agent11
+    truck_agent10.latest_location = nodes['X']
+    truck_agent11.latest_location = nodes['A']
     nodes['L'].bin = bin_agent0
     nodes['M'].bin = bin_agent1
     
@@ -68,43 +69,31 @@ async def main():
     await wait_until_finished(bin_agent1)
     
 
-if __name__ == "__main__":
+def build_graph_from_file(path='graph_files/proj1_edgelist'):
+    with open(path, 'r') as f:
+        lines = f.readlines()
     
-    f = open('graph_files/proj1_edgelist', 'r')
-    a = f.readlines()
     nodes_set = set()
     inc_out_set = set()
-    for line in a:
-        
+
+    for line in lines:
         splited = line.split()
         nodes_set.add(splited[0])
-        inc_out_set.add((splited[0], splited[1], splited[2]))
-        
-        
-    for node in nodes_set:
-        node_ = Node(node)
-        nodes[node] = node_ 
-    
-    nodes['X'] = Node('X')
-        
-    
-    for node_pair in inc_out_set:
-       edge = Edge(node_pair[0], node_pair[1], node_pair[2])
-       edges[(node_pair[0],node_pair[1])] = edge
+        inc_out_set.add((splited[0], splited[1], float(splited[2])))
 
-    for key,value in edges.items():
-        nodes[key[0]].edge_list.add(value)
-        nodes[key[1]].edge_list.add(value)
-    
-    
-    for key,value in nodes.items():
-        print("--------")
-        for edge in value.edge_list:
-            print(edge.A, edge.B)
-    
-    
-    # For first scenario
-    
-    #nodes['A'].bin = 
-    
+    for node in nodes_set:
+        nodes[node] = Node(node)
+    nodes['X'] = Node('X')
+
+    for a, b, w in inc_out_set:
+        edge = Edge(a, b, w)
+        edges[(a, b)] = edge
+
+    for (a, b), edge in edges.items():
+        nodes[a].edge_list.add(edge)
+        nodes[b].edge_list.add(edge)
+
+
+if __name__ == "__main__":
+    build_graph_from_file()
     spade.run(main())
