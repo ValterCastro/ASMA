@@ -1,11 +1,17 @@
+from time import sleep
+
 class Central():
     total_waste_collected = 0
     average_waste_level = 0
     total_distance_traveled = 0
+    bins = {}
+    trucks = {}
+    nodes = {}
         
-    def __init__(self):
+    def __init__(self, nodes):
         self.bins = {}
         self.trucks = {}
+        self.nodes = nodes
         
     def get_moment_statistics(self):
         """
@@ -34,12 +40,16 @@ class Central():
         """
         Adds a truck to the central system.
         """
-        self.trucks[truck_id] = {
-            "truck": truck,
-            "distance_traveled": 0,
-        }
+        self.trucks[truck_id] = truck
       
     
-
-        
-        
+    def update_world(self, interval):
+        while True:
+            for key, bin in self.bins.items(): 
+                bin['bin'].update()
+            for _, truck in self.trucks.items():
+                break
+            
+            print("\033[32m⊞ Updating world...\033[0m")
+            
+            sleep(interval)

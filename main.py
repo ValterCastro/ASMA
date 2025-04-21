@@ -2,6 +2,7 @@ import getpass
 import spade
 import asyncio
 import random
+import threading
 
 # from spade_bdi.bdi import BDIAgent
 from central import Central
@@ -21,7 +22,6 @@ NODES = {}
 EDGES = {}
 BINS = []
 
-
 def main(central):
     while True:
         options = ["Scenario 1", "Scenario 2", "Scenario 3"]
@@ -38,18 +38,17 @@ def main(central):
 
 
 async def gen_bins(central):
-        
-    for i, bin in zip(range(4), "ABCDEFGHIJKLMNOP"):
+    for i, node in zip(range(4), "ABCDEFGHIJKLMNOP"):
         bin_agent = Bin(f"asma@draugr.de/{i}", "1234")
         await bin_agent.start(auto_register=True)
         await asyncio.sleep(1)
-        BINS.append(bin_agent)
         central.add_bin(i, bin_agent)
         behavior = EmptyGarbage(central=central)
         bin_agent.add_behaviour(behavior)
+        NODES[node].bin = bin_agent
+        bin_agent.location = node
+        BINS.append(bin_agent)
         
-
-
 def get_rand_bins(bins, n):
     return random.sample(bins, n)
 
@@ -67,29 +66,22 @@ async def scenario_1(central):
     truck_agent = Truck("asma@draugr.de/10", "1234")
     await truck_agent.start(auto_register=True)
     await asyncio.sleep(1)
-    # NODES["X"].truck = truck_agent
+    NODES["X"].truck = truck_agent
+    truck_agent.location = "X"
 
     central.add_truck(truck_agent.name, truck_agent)
+    
+    thread = threading.Thread(target=central.update_world, args=(2,), daemon=True)
+    thread.start()
 
-    # Initialize read bins from graph
+    # # Initialize read bins from graph
     await gen_bins(central)
 
-    
-        
-        #print(central.trucks, "\n\n\n\n",central.bins)
+    # #print(central.trucks, "\n\n\n\n",central.bins)
 
-        
+    # await asyncio.gather(*(wait_until_finished(bin) for bin in BINS))
 
-    # for node in nodes:
-
-    #     await wait_until_finished(node.bin)
-
-    await asyncio.gather(*(wait_until_finished(bin) for bin in BINS))
-
-    await wait_until_finished(truck_agent)
-
-
-
+    # await wait_until_finished(truck_agent)
 
 async def scenario_2(central):
     # Scenario 2 logic here
@@ -132,10 +124,10 @@ def read_graph():
 
 if __name__ == "__main__":
 
-    central = Central()
 
     # Read the graph from the file and populate NODES and EDGES
     read_graph()
+    central = Central(NODES)
 
     # Run the menu function
     main(central)
