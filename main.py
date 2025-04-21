@@ -19,6 +19,7 @@ from simple_term_menu import TerminalMenu
 
 NODES = {}
 EDGES = {}
+BINS = []
 
 
 def main(central):
@@ -36,12 +37,17 @@ def main(central):
             spade.run(scenario_3(central))
 
 
-def gen_bins(central):
-    behavior = EmptyGarbage(central=central)
-    for i, bin in zip(range(16), "ABCDEFGHIJKLMNOP"):
+async def gen_bins(central):
+        
+    for i, bin in zip(range(4), "ABCDEFGHIJKLMNOP"):
         bin_agent = Bin(f"asma@draugr.de/{i}", "1234")
+        await bin_agent.start(auto_register=True)
+        await asyncio.sleep(1)
+        BINS.append(bin_agent)
+        central.add_bin(i, bin_agent)
+        behavior = EmptyGarbage(central=central)
         bin_agent.add_behaviour(behavior)
-        NODES[bin].bin = bin_agent
+        
 
 
 def get_rand_bins(bins, n):
@@ -65,17 +71,22 @@ async def scenario_1(central):
 
     central.add_truck(truck_agent.name, truck_agent)
 
-    nodes = get_rand_bins(list(NODES.values()), 6)
+    # Initialize read bins from graph
+    await gen_bins(central)
 
-    for node in nodes:
-        await node.bin.start(auto_register=True)
-        await asyncio.sleep(1)
+    
         
-        central.add_bin(node.bin.name, node.bin)
-        
-        print(central.trucks, "\n\n\n\n",central.bins)
+        #print(central.trucks, "\n\n\n\n",central.bins)
 
-        await wait_until_finished(node.bin)
+        
+
+    # for node in nodes:
+
+    #     await wait_until_finished(node.bin)
+
+    await asyncio.gather(*(wait_until_finished(bin) for bin in BINS))
+
+    await wait_until_finished(truck_agent)
 
 
 
@@ -125,9 +136,6 @@ if __name__ == "__main__":
 
     # Read the graph from the file and populate NODES and EDGES
     read_graph()
-
-    # Initialize read bins from graph
-    gen_bins(central)
 
     # Run the menu function
     main(central)

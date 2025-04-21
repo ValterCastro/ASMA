@@ -19,11 +19,13 @@ class EmptyGarbage(CyclicBehaviour):
     def __init__(self, central, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.central = central  #
+        #self.fsm_added = False
 
     async def on_start(self):
         print("Starting announcement . . .")
 
     async def run(self):
+        print(self.agent.jid)
         fsm = ContractNetFSMBehaviour(agent=self.agent)
         fsm.add_state(name=STATE_ONE, state=StateOne(agent=self.agent ,central=self.central), initial=True)
         fsm.add_state(name=STATE_TWO, state=StateTwo())
@@ -32,12 +34,10 @@ class EmptyGarbage(CyclicBehaviour):
         fsm.add_transition(source=STATE_ONE, dest=STATE_THREE)
         fsm.add_transition(source=STATE_THREE, dest=STATE_TWO)
         fsm.add_transition(source=STATE_THREE, dest=STATE_FOUR)
-
-        self.agent.current_msg_type = (
-            AnnouncementType.SET_VARIABLE_LESS_THAN_OR_EQUAL.value
-        )
-
         self.agent.add_behaviour(fsm)
+        self.fsm_added = True
+
+    
         await asyncio.sleep(5)
 
 class InformBehav(OneShotBehaviour):
@@ -49,7 +49,6 @@ class InformBehav(OneShotBehaviour):
 
         async def run(self):
             print("InformBehav running")
-            print(self.receiver_address)
             msg = Message(to=str(self.receiver_address))     # Instantiate the message
             msg.set_metadata("performative", "inform")  # Set the "inform" FIPA performative
             msg.set_metadata("ontology", "myOntology")  # Set the ontology of the message content
@@ -63,7 +62,31 @@ class InformBehav(OneShotBehaviour):
             self.exit_code = "Job Finished!"
 
             # stop agent from behaviour
-            await self.agent.stop()
+            #await self.agent.stop()
+
+class RecvBehav(OneShotBehaviour):
+        
+        def __init__(self, agent, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.agent = agent
+        
+
+        async def run(self):
+            print("RecvBehav running")
+
+            print("here")
+
+            msg = await self.receive(timeout=10) # wait for a message for 10 seconds
+
+            #inbox.append(msg)
+
+            if msg:
+                print("Message received with content: {}".format(msg.body))
+            else:
+                print("Did not received any message after 10 seconds")
+
+            # # stop agent from behaviour
+            #await self.agent.stop()
 
 
 class StateOne(State):
@@ -81,6 +104,9 @@ class StateOne(State):
 
             self.agent.msg_behav = InformBehav(agent=self.agent, receiver_address=value["truck"].jid)
             self.agent.add_behaviour(self.agent.msg_behav)
+
+            value["truck"].rec_behav = RecvBehav(agent=value["truck"])
+            value["truck"].add_behaviour(value["truck"].rec_behav)
 
             
             

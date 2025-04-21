@@ -1,8 +1,11 @@
 import getpass
 #from spade_bdi.bdi import BDIAgent
 import spade
+from spade.behaviour import OneShotBehaviour
 import asyncio
 from spade.agent import Agent
+
+
 
 class Truck(Agent):
     truck_number = 1
@@ -13,6 +16,9 @@ class Truck(Agent):
     is_contractor = False
     is_manager = False
     latest_location = None
+    rec_behav = None
+    inbox = []
+    
     
     async def setup(self):
         self.variables = {
@@ -25,7 +31,7 @@ class Truck(Agent):
         Truck.truck_number += 1
         self.name = self.name + str(Truck.truck_number)
         # Called when the agent starts
-        print(f"Agent {self.name} starting...")
+        #print(f"Agent {self.name} starting...")
     
     def isAvailable(self):
         return True
@@ -33,7 +39,7 @@ class Truck(Agent):
     def updateLocation(self, location):
         assert location is not None, "Location cannot be None"
         self.latest_location = location
-        print(f"Truck {self.name} updated location to {location}")
+        #print(f"Truck {self.name} updated location to {location}")
 
     def getLocation(self):
         assert hasattr(self, 'latest_location'), "Truck must have a latest_location attribute"
@@ -60,5 +66,28 @@ class Truck(Agent):
 
 #     await asyncio.sleep(5)
 
+
+# async def check_inbox(truck):
+#     while True:
+#         print("Current inbox:")
+#         for msg in truck.inbox:  # Access truck's inbox
+#             print("Message received with content: {}".format(msg))
+#             print("--------------------")
+#         await asyncio.sleep(5)  # Wait 5 seconds asynchronously
+
+# async def main():
+#     # Start the Truck agent
+#     #truck = Truck("truckagent@your_xmpp_server", "password")
+#     await truck.start(auto_register=True)
+
+#     # Run the inbox checker
+#     await check_inbox(truck)
+
+#     # Keep the program running (optional cleanup)
+#     try:
+#         await asyncio.Future()  # Run forever until interrupted
+#     finally:
+#         await truck.stop()
+
 # if __name__ == "__main__":
-#     spade.run(main())
+#     asyncio.run(main())
