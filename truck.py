@@ -5,7 +5,6 @@ import asyncio
 from spade.agent import Agent
 
 class Truck(Agent):
-    
     truck_number = 1
     current_waste_lvl = 0
     capacity = 80
@@ -27,56 +26,6 @@ class Truck(Agent):
         self.name = self.name + str(Truck.truck_number)
         # Called when the agent starts
         print(f"Agent {self.name} starting...")
-    
-    def setManager(self, central):
-        assert central is not None, "Central object cannot be None"
-        assert hasattr(central, 'managers'), "Central must have a managers attribute"
-        assert isinstance(central.managers, dict), "central.managers must be a dictionary"
-        assert hasattr(self, 'is_manager'), "self.is_manager must be defined"
-        assert isinstance(self.is_manager, bool), "self.is_manager must be a boolean"
-        assert hasattr(self, 'name'), "self.name must be defined"
-
-        if self.is_manager:
-            # Remove manager
-            assert self.name in central.managers, f"{self.name} not found in central.managers"
-            self.is_manager = False
-            central.managers.pop(self.name)
-        else:
-            # Add manager
-            assert self.name not in central.managers, f"{self.name} is already in central.managers"
-            self.is_manager = True
-            central.managers.update({self.name: self})
-            
-    def setContractor(self, central):
-        assert central is not None, "Central object cannot be None"
-        assert hasattr(central, 'contractors'), "Central must have a contractors attribute"
-        assert isinstance(central.contractors, dict), "central.contractors must be a dictionary"
-        assert hasattr(self, 'is_contractor'), "self.is_contractor must be defined"
-        assert isinstance(self.is_contractor, bool), "self.is_contractor must be a boolean"
-        assert hasattr(self, 'name'), "self.name must be defined"
-
-        if self.is_contractor:
-            # Remove manager
-            assert self.name in central.contractors, f"{self.name} not found in central.contractors"
-            self.is_contractor = False
-            central.contractors.pop(self.name)
-        else:
-            # Add manager
-            assert self.name not in central.contractors, f"{self.name} is already in central.contractors"
-            self.is_contractor = True
-            central.contractors.update({self.jid: self})
-        
-        
-        
-    def getManager(self):
-        assert hasattr(self, 'is_manager'), "Bin must have a is_manager attribute"
-        assert isinstance(self.is_manager, bool), "self.is_manager must be a boolean"
-        return self.is_manager
-        
-    def getContractor(self):
-        assert hasattr(self, 'is_contractor'), "Truck must have a is_contractor attribute"
-        assert isinstance(self.is_contractor, bool), "self.is_contractor must be a boolean"
-        return self.is_contractor
     
     def isAvailable(self):
         return True

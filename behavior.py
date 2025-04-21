@@ -2,7 +2,8 @@ from spade.behaviour import CyclicBehaviour
 from spade.behaviour import FSMBehaviour, State
 from spade.message import Message
 from announcement_types import AnnouncementType
-from central import central
+from spade.behaviour import OneShotBehaviour
+from central import Central
 import asyncio
 
 STATE_ONE = "CALL_FOR_PROPOSAL"  # Bin is full
@@ -14,12 +15,17 @@ STATE_FIVE = "INFORM:DONE"  # Bin informs the truck that the job is done
 
 
 class EmptyGarbage(CyclicBehaviour):
+
+    def __init__(self, central, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.central = central  #
+
     async def on_start(self):
         print("Starting announcement . . .")
 
     async def run(self):
-        fsm = ContractNetFSMBehaviour()
-        fsm.add_state(name=STATE_ONE, state=StateOne(), initial=True)
+        fsm = ContractNetFSMBehaviour(agent=self.agent)
+        fsm.add_state(name=STATE_ONE, state=StateOne(agent=self.agent ,central=self.central), initial=True)
         fsm.add_state(name=STATE_TWO, state=StateTwo())
         fsm.add_state(name=STATE_THREE, state=StateThree())
         fsm.add_transition(source=STATE_ONE, dest=STATE_TWO)
@@ -34,15 +40,51 @@ class EmptyGarbage(CyclicBehaviour):
         self.agent.add_behaviour(fsm)
         await asyncio.sleep(5)
 
+class InformBehav(OneShotBehaviour):
+        
+        def __init__(self, agent, receiver_address, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.receiver_address = receiver_address  #
+            self.agent = agent
+
+        async def run(self):
+            print("InformBehav running")
+            print(self.receiver_address)
+            msg = Message(to=str(self.receiver_address))     # Instantiate the message
+            msg.set_metadata("performative", "inform")  # Set the "inform" FIPA performative
+            msg.set_metadata("ontology", "myOntology")  # Set the ontology of the message content
+            msg.set_metadata("language", "OWL-S")       # Set the language of the message content
+            msg.body = "Hello World"
+
+            await self.send(msg)
+            print("Message sent!")
+
+            # set exit_code for the behaviour
+            self.exit_code = "Job Finished!"
+
+            # stop agent from behaviour
+            await self.agent.stop()
+
 
 class StateOne(State):
     """
     Bin is full - Call for trucks proposals
     """
+    def __init__(self, agent, central, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.agent = agent
+        self.central = central  # Store the agent address
 
     async def run(self):
         print("1️⃣ Bin is full - Call for trucks proposals")
-        for key, item in central.contractors.items():
+        for key, value in self.central.trucks.items():
+
+            self.agent.msg_behav = InformBehav(agent=self.agent, receiver_address=value["truck"].jid)
+            self.agent.add_behaviour(self.agent.msg_behav)
+
+            
+            
+            '''
             msg = Message(to=str(key))
             msg.set_metadata(
                 "type", AnnouncementType.SET_VARIABLE_LESS_THAN_OR_EQUAL.value
@@ -55,9 +97,10 @@ class StateOne(State):
             msg.body = f"Need to drop waste from bin {self.agent.bin_number}."
             (
                 self.set_next_state(STATE_TWO)
-                if not item.isAvailable()
+                if not value.isAvailable()
                 else self.set_next_state(STATE_THREE)
             )
+            '''
 
 
 class StateTwo(State):
@@ -100,5 +143,10 @@ class StateFive(State):
 
 
 class ContractNetFSMBehaviour(FSMBehaviour):
+
+    def __init__(self, agent, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.agent = agent  #
+
     async def on_start(self):
         print("--------")
