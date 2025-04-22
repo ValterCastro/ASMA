@@ -65,10 +65,12 @@ async def scenario_1(central):
     
     truck_agent = Truck("asma@draugr.de/10", "1234")
     await truck_agent.start(auto_register=True)
-    await asyncio.sleep(1)
+    
     NODES["X"].truck = truck_agent
     truck_agent.location = "X"
 
+    await asyncio.sleep(1)
+    
     central.add_truck(truck_agent.name, truck_agent)
     
     thread = threading.Thread(target=central.update_world, args=(2,), daemon=True)
