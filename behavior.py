@@ -36,7 +36,7 @@ class EmptyGarbage(CyclicBehaviour):
         fsm.add_state(name=STATE_ONE, state=StateOne(agent=self.agent ,central=self.central , trucks=self.available_trucks), initial=True)
         fsm.add_state(name=STATE_TWO, state=StateTwo(agent=self.agent))
         fsm.add_state(name=STATE_THREE, state=StateThree(agent=self.agent, trucks=self.available_trucks, central=self.central))
-        fsm.add_state(name=STATE_FOUR, state=StateFour(agent=self.agent, central=self.central, trucks=self.available_trucks, winner=self.winner))
+        fsm.add_state(name=STATE_FOUR, state=StateFour(agent=self.agent, central=self.central, trucks=self.available_trucks, winner=self.winner, behav=self))
         fsm.add_state(name=STATE_FIVE, state=StateFive(agent=self.agent, central=self.central, winner=self.winner))
         fsm.add_transition(source=STATE_ONE, dest=STATE_TWO)
         fsm.add_transition(source=STATE_ONE, dest=STATE_THREE)
@@ -74,9 +74,6 @@ class InformBehav(OneShotBehaviour):
             await self.send(msg)
             print("Message sent!")
 
-            #print(msg.body)
-
-            # set exit_code for the behaviour
             self.exit_code = "Job Finished!"
 
             
@@ -223,12 +220,13 @@ class StateFour(State):
     Bin accepts the proposal
     """
     
-    def __init__(self, agent, central, trucks, winner, *args, **kwargs):
+    def __init__(self, agent, central, trucks, winner, behav, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.agent = agent
         self.central = central
         self.trucks = trucks
         self.winner = winner
+        self.behav = behav
 
     async def run(self):
         print(f" 4️⃣ Bin \033[31m{self.agent.jid}\033[0m - Bin accepts the proposal")
@@ -250,14 +248,16 @@ class StateFour(State):
         for key , value in available_truck_nodes.items():
             distance = dijkstra(key, self.agent.location, self.central.nodes)
             if best_distance > distance:
+                
                 best_distance = distance
-                self.winner = value
+                self.behav.winner = value
+                print("Winner", self.winner)
                 
         self.agent.msg_behav = InformBehav(agent=self.agent, receiver_address=str(self.winner.jid), metadata=None, body="I ACCEPT PROPOSE")
         self.agent.add_behaviour(self.agent.msg_behav)
 
-        self.winner.rec_behav = RecvBehav(agent=self.winner)
-        self.winner.add_behaviour(self.winner.rec_behav)
+        self.behav.winner.rec_behav = RecvBehav(agent=self.winner)
+        self.behav.winner.add_behaviour(self.winner.rec_behav)
         recv_behaviors.append(self.winner.rec_behav)
             
             
@@ -285,6 +285,8 @@ class StateFive(State):
 
     async def run(self):
         print(f"5 \033[31m{self.agent.jid}\033[0m - Inform Done")
+        print("State 5", self.winner)
+        
         
 
 
