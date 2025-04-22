@@ -264,10 +264,16 @@ class StateFour(State):
         available_truck_nodes = {}
 
         recv_behaviors = []
+        
+        
+        real_msgs = [msg for msg in self.agent.inbox if msg is not None]
 
-        for msg in self.agent.inbox:
+        for msg in real_msgs:
+            
+            sender_jid = str(msg.sender)
+            if sender_jid in self.trucks:
 
-            if len(self.trucks) > 0:
+            
 
                 available_truck_nodes[self.trucks[str(msg.sender)].location] = (
                     self.trucks[str(msg.sender)]

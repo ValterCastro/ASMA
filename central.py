@@ -62,9 +62,12 @@ class Central:
                 break
 
             print(
-f"""\n\033[32m⊞ [{round(time() - self.start)} seconds] Updating world...
-\033[34m{''.join(f"Bin {bin.name}: {progress_bar(bin.current_waste_lvl / bin.capacity)}\n" for bin in self.bins.values())}\033[0m            
-"""
-            )
+                f"\n\033[32m⊞ [{round(time() - self.start)} seconds] Updating world...\033[0m\n"
+                + "".join(
+                    f"\033[34mBin {bin.name}: {progress_bar(bin.current_waste_lvl / bin.capacity)}\033[0m\n"
+                    for bin in self.bins.values()
+                    )
+                )
+
 
             sleep(interval)
