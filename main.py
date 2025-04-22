@@ -39,14 +39,9 @@ def main(central):
 
 async def gen_bins(central):
     for i, node in zip(range(4), "ABCDEFGHIJKLMNOP"):
-        bin_agent = Bin(f"asma@draugr.de/{i}", "1234")
-        await bin_agent.start(auto_register=True)
-        await asyncio.sleep(1)
-        central.add_bin(i, bin_agent)
-        behavior = EmptyGarbage(central=central)
-        bin_agent.add_behaviour(behavior)
+        bin_agent = Bin(f"asma@draugr.de/{i}", "1234", central=central, location=node)
+        central.add_bin(bin_agent.name, bin_agent)
         NODES[node].bin = bin_agent
-        bin_agent.location = node
         BINS.append(bin_agent)
         
 def get_rand_bins(bins, n):
@@ -76,12 +71,10 @@ async def scenario_1(central):
     thread = threading.Thread(target=central.update_world, args=(2,), daemon=True)
     thread.start()
 
-    # # Initialize read bins from graph
     await gen_bins(central)
 
-    # #print(central.trucks, "\n\n\n\n",central.bins)
+    await asyncio.gather(*(bin["bin"].start() for bin in central.bins.values()))
 
-    # await asyncio.gather(*(wait_until_finished(bin) for bin in BINS))
 
     # await wait_until_finished(truck_agent)
 
