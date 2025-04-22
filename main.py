@@ -22,7 +22,8 @@ NODES = {}
 EDGES = {}
 BINS = []
 
-def main(central):
+
+def main():
     while True:
         options = ["Scenario 1", "Scenario 2", "Scenario 3"]
         terminal_menu = TerminalMenu(options)
@@ -30,11 +31,11 @@ def main(central):
         selection = options[menu_entry_index]
 
         if selection == "Scenario 1":
-            spade.run(scenario_1(central))
+            spade.run(scenario_1(Central(NODES, 240)))
         elif selection == "Scenario 2":
-            spade.run(scenario_2(central))
+            spade.run(scenario_2(Central(NODES, 240)))
         elif selection == "Scenario 3":
-            spade.run(scenario_3(central))
+            spade.run(scenario_3(Central(NODES, 120)))
 
 
 async def gen_bins(central):
@@ -43,9 +44,11 @@ async def gen_bins(central):
         central.add_bin(bin_agent.name, bin_agent)
         NODES[node].bin = bin_agent
         BINS.append(bin_agent)
-        
+
+
 def get_rand_bins(bins, n):
     return random.sample(bins, n)
+
 
 async def scenario_1(central):
     """
@@ -56,39 +59,52 @@ async def scenario_1(central):
     • Number of Trucks: 1
     • End of simulation: 240 seconds
     """
-    
-    
+
     truck_agent = Truck("asma@draugr.de/10", "1234")
     await truck_agent.start(auto_register=True)
-    
+
     NODES["X"].truck = truck_agent
     truck_agent.location = "X"
 
-    await asyncio.sleep(1)
-    
     central.add_truck(truck_agent.name, truck_agent)
-    
-    thread = threading.Thread(target=central.update_world, args=(2,), daemon=True)
-    thread.start()
 
     await gen_bins(central)
 
-    await asyncio.gather(*(bin["bin"].start() for bin in central.bins.values()))
+    await asyncio.sleep(3)
 
+    await asyncio.gather(*(bin.start() for bin in central.bins.values()))
+
+    await asyncio.sleep(3)
+
+    thread = threading.Thread(target=central.update_world, args=(2,), daemon=True)
+    thread.start()
+
+    central.running = False
+    thread.join()
 
     # await wait_until_finished(truck_agent)
 
+
 async def scenario_2(central):
-    # Scenario 2 logic here
-    print("Executing Scenario 2...")
-    # You can call the main function or any other function here
+    """
+    Scenario 2:
+    • Bin filling rate (time interval): every 300 seconds (ensure that the bin fills up once and only
+    once)
+    • Bin filling rate (quantity): 100% of the bin capacity
+    • Number of Trucks: 2
+    • End of simulation: 240 seconds
+    """
     await main()
 
 
 async def scenario_3(central):
-    # Scenario 3 logic here
-    print("Executing Scenario 3...")
-    # You can call the main function or any other function here
+    """
+    Scenario 3:
+    • Bin filling rate (time interval): every 4 seconds
+    • Bin filling rate (quantity): 1/5 of the bin capacity
+    • Number of Trucks: 2
+    • End of simulation: 120 seconds
+    """
     await main()
 
 
@@ -119,10 +135,8 @@ def read_graph():
 
 if __name__ == "__main__":
 
-
     # Read the graph from the file and populate NODES and EDGES
     read_graph()
-    central = Central(NODES)
 
     # Run the menu function
-    main(central)
+    main()
