@@ -42,7 +42,7 @@ class Truck(Agent):
         #print(f"Truck {self.name} updated location to {location}")
 
     def getLocation(self):
-        assert hasattr(self, 'latest_location'), "Truck must have a latest_location attribute"
+        assert hasattr(self, 'location'), "Truck must have a location attribute"
         return self.location
 
     def isAvailable(self, amount):

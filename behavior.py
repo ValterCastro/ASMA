@@ -32,7 +32,7 @@ class EmptyGarbage(CyclicBehaviour):
         fsm = ContractNetFSMBehaviour(agent=self.agent)
         fsm.add_state(name=STATE_ONE, state=StateOne(agent=self.agent ,central=self.central , trucks=self.available_trucks), initial=True)
         fsm.add_state(name=STATE_TWO, state=StateTwo())
-        fsm.add_state(name=STATE_THREE, state=StateThree(agent=self.agent, trucks=self.available_trucks))
+        fsm.add_state(name=STATE_THREE, state=StateThree(agent=self.agent, trucks=self.available_trucks, central=self.central))
         fsm.add_transition(source=STATE_ONE, dest=STATE_TWO)
         fsm.add_transition(source=STATE_ONE, dest=STATE_THREE)
         #fsm.add_transition(source=STATE_THREE, dest=STATE_TWO)
@@ -175,10 +175,11 @@ class StateThree(State):
     Truck proposes to pick up the bin
     """
 
-    def __init__(self, agent, trucks, *args, **kwargs):
+    def __init__(self, agent, trucks, central, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.agent = agent
         self.trucks = trucks
+        self.central = central
         
 
 
@@ -187,14 +188,14 @@ class StateThree(State):
 
 
 
-        #distances = dijkstra(self.agent.location, self.central.nodes)
-        #print("Distances: ", distances)
+        distances = dijkstra(self.agent.location, self.central.nodes)
+        print("Distances: ", distances)
 
 
-        # for truck in self.available_trucks:
-        #     truck_location = self.central.trucks[truck].location
-        #     truck_distance = distances[truck_location]
-        #     print(f"Truck {truck} | location: {truck.location} | distance: {truck_distance}")
+        for truck in self.trucks:
+            truck_location = truck.getLocation()
+            truck_distance = distances[truck_location]
+            print(f"Truck {truck} | location: {truck.location} | distance: {truck_distance}")
             
         for truck in self.trucks:
            
