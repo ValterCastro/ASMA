@@ -16,13 +16,20 @@ class Truck(Agent):
     msg_behav = None
     inbox = []
 
-    location = None
+
 
     is_busy = False
     cycles_to_destination = 0
     current_waste_lvl = 0
 
     distance_traveled = 0
+    
+    def __init__(self, jid, password, location):
+        # Call parent constructor
+        super().__init__(jid, password)
+        self.location = location
+        self.name = str(self.jid)
+        #self.name = str(self.jid.resource)
 
     async def setup(self):
         self.variables = {
@@ -30,12 +37,11 @@ class Truck(Agent):
             "capacity": self.CAPACITY,
             "velocity": self.VELOCITY,
         }
-        self.name = str(self.jid)
-        self.location = None
+        
         self.is_busy = False
 
     def updateLocation(self, location):
-        assert location is not None, "Location cannot be None"
+        #assert location is not None, "Location cannot be None"
         self.location = location
         # print(f"Truck {self.name} updated location to {location}")
 
@@ -61,7 +67,8 @@ class Truck(Agent):
         )
 
     def update(self):
-        if self.is_busy:
+        print("CICLES", self.cycles_to_destination)
+        if self.is_busy and self.cycles_to_destination > 0:
             self.cycles_to_destination -= 1
         else:
             self.is_busy = False

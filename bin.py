@@ -14,7 +14,7 @@ class Bin(Agent):
     rec_behav = None
     empty_garbage_behav = None
     inbox = []
-    filling_rate = 1
+    filling_rate = 10
     location = None
 
     def __init__(self, jid, password, central, location):

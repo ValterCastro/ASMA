@@ -45,10 +45,16 @@ async def gen_bins(central):
         central.add_bin(bin_agent.name, bin_agent)
         NODES[node].bin = bin_agent
         BINS.append(bin_agent)
+        
+        
+async def gen_trucks(central):
+    for i, node in zip(range(1), "XABCDEFGHIJKLMNOP"):
+        truck_agent = Truck(f"asma@draugr.de/{i+100}", "1234", location=node)
+        central.add_truck(truck_agent.name, truck_agent)
 
 
-def get_rand_bins(bins, n):
-    return random.sample(bins, n)
+# def get_rand_bins(bins, n):
+#     return random.sample(bins, n)
 
 
 async def scenario_1():
@@ -61,30 +67,27 @@ async def scenario_1():
     • End of simulation: 240 seconds
     """
 
-    central = Central(NODES, 5)
+    central = Central(NODES, 215)
 
-    truck_agent = Truck("asma@draugr.de/10", "1234")
-    await truck_agent.start(auto_register=True)
-
-    NODES["X"].truck = truck_agent
-    truck_agent.location = "X"
-
-    await asyncio.sleep(1)
-
-    central.add_truck(truck_agent.name, truck_agent)
+    await gen_trucks(central)
+    
+    await asyncio.gather(*(truck.start() for truck in central.trucks.values()))
 
     await gen_bins(central)
 
     await asyncio.gather(*(bin["bin"].start() for bin in central.bins.values()))
 
-    thread = threading.Thread(target=central.update_world, daemon=True)
-    thread.start()
+    # thread = threading.Thread(target=central.update_world, daemon=True)
+    # thread.start()
+    
+    update_task = asyncio.create_task(central.update_world())
+    await update_task
 
-    while central.running:
-        pass
+    # while central.running:
+    #     pass
 
     await asyncio.gather(*(bin["bin"].stop() for bin in central.bins.values()))
-    await truck_agent.stop()
+    await asyncio.gather(*(truck.stop() for truck in central.trucks.values()))
 
     input(">")
     clear()

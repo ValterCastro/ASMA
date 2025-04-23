@@ -108,12 +108,13 @@ class StateZero(State):
         self.behav = behav
 
     async def run(self):
+        
         if self.behav.agent.current_waste_lvl >= self.behav.agent.capacity:
             print(f"0️⃣ Bin \033[31m{self.behav.agent.jid}\033[0m needs to be emptied")
             self.set_next_state(STATE_ONE)
         else:
             print(f"0️⃣  Bin \033[31m{self.behav.agent.jid}\033[0m waiting to be full")
-            await asyncio.sleep(5)
+            await asyncio.sleep(3)
             self.set_next_state(STATE_ZERO)
 
 
@@ -134,6 +135,8 @@ class StateOne(State):
         recv_behaviors = []
 
         for key, value in self.behav.central.trucks.items():
+            
+
 
             data = {"location": self.agent.location}
 
@@ -152,6 +155,7 @@ class StateOne(State):
             available_truck_position = value.isAvailable(
                 self.behav.agent.current_waste_lvl
             )
+            
 
             if available_truck_position:
                 self.behav.available_trucks[str(value.jid)] = value
@@ -187,7 +191,7 @@ class StateTwo(State):
 
     async def run(self):
         print(
-            f"2️⃣  \033[31m{self.agent.jid}\033[No trucks available - all refused call for proposals"
+            f"2️⃣  \033[31m{self.agent.jid}\033[0m - No trucks available - all refused call for proposals"
         )
 
         self.set_next_state(STATE_ONE)
@@ -252,13 +256,13 @@ class StateFour(State):
         available_truck_nodes = {}
 
         recv_behaviors = []
-
+        
         for msg in self.behav.agent.inbox:
             if len(self.behav.central.trucks) > 0:
                 available_truck_nodes[
                     self.behav.central.trucks[str(msg.sender)].location
                 ] = self.behav.central.trucks[str(msg.sender)]
-
+                
         distance = 0
         for key, value in available_truck_nodes.items():
             distance = dijkstra(
@@ -285,7 +289,8 @@ class StateFour(State):
             await behav.join()
 
         self.behav.winner.startTrip(
-            best_distance / self.behav.winner.VELOCITY,
+            #np.floor(best_distance / self.behav.winner.VELOCITY),
+            5,
             best_distance,
         )
 
@@ -305,6 +310,8 @@ class StateFive(State):
         print(
             f"5️⃣  \033[31m{self.behav.agent.jid}\033[0m - Truck assigned: {self.behav.winner}"
         )
+        
+        print(self.behav.agent.location)
 
         print(f"\033[31m[DEBUG]\033[0m - Location before: {self.behav.winner.location}")
         while self.behav.winner.cycles_to_destination > 0:
@@ -312,8 +319,10 @@ class StateFive(State):
                 f"5️⃣  \033[31m{self.behav.agent.jid}\033[0m - Truck has not reached the destination yet"
             )
             await asyncio.sleep(2)
+            
+        await asyncio.sleep(1)
 
-        if self.behav.winner.is_busy == False:
+        if self.behav.winner.is_busy is False:
             self.behav.winner.location = self.behav.agent.location
 
         print(f"\033[31m[DEBUG]\033[0m - Location after: {self.behav.winner.location}")

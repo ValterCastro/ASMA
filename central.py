@@ -58,15 +58,15 @@ class Central:
         """
         self.trucks[truck_id] = truck
 
-    def update_world(self):
+    async def update_world(self):
         self.start = time()
 
         print(
             f"""\n\033[32m⊞ World update setup: {time() - self.start < self.duration}\033[0m\n
-start: {self.start}
-time-start: {time()}
-duration: {self.duration}
-"""
+            start: {self.start}
+            time-start: {time()}
+            duration: {self.duration}
+            """
         )
 
         while time() - self.start < self.duration:
@@ -78,11 +78,11 @@ duration: {self.duration}
             print(
                 f"\n\033[32m⊞ [{round(time() - self.start)} seconds] Updating world...\033[0m\n"
                 + "".join(
-                    f"\033[34mBin {bin["bin"].name}: {progress_bar(bin["bin"].current_waste_lvl / bin["bin"].capacity)}\033[0m\n"
+                    f"\033[34mBin {bin['bin'].name}: {progress_bar(bin['bin'].current_waste_lvl / bin['bin'].capacity)}\033[0m\n"
                     for bin in self.bins.values()
                 )
             )
 
             # self.get_moment_statistics()
-            sleep(1)
+            await asyncio.sleep(1)
         self.running = False
