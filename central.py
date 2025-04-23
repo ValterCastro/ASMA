@@ -2,6 +2,8 @@ from time import sleep
 from time import time
 from helper import progress_bar
 import asyncio
+from datetime import datetime
+import os
 
 
 class Central:
@@ -28,19 +30,60 @@ class Central:
         Returns the current statistics of the central system.
         """
         self.total_distance_traveled = sum(
-            [truck.distance_traveled for truck in self.trucks.values()]
-        )
+        [truck.distance_traveled for truck in self.trucks.values()]
+    )
         self.average_waste_level = (
-            sum([bin.waste_level for bin in self.bins.values()]) / len(self.bins)
-            if self.bins
-            else 0
+            sum([bin["waste_level"] for bin in self.bins.values()]) / len(self.bins)
+            if self.bins else 0
         )
 
-        return {
+        statistics = {
             "total_waste_collected": self.total_waste_collected,
             "average_waste_level": self.average_waste_level,
+            "waste_full_times": {
+                bin_id: bin.get("time_full", "Unknown") for bin_id, bin in self.bins.items()
+            },
+            # "waste_outside_bin": self.total_waste_outside,
+            "truck_distances": {
+                truck_id: truck.distance_traveled for truck_id, truck in self.trucks.items()
+            },
             "total_distance_traveled": self.total_distance_traveled,
         }
+
+        return statistics
+
+    
+    def write_statistics(self):
+        """
+        Writes the current system statistics to stats.txt in a human-readable format.
+        """
+        stats = self.get_moment_statistics()
+
+        lines = []
+        lines.append(f"Timestamp: {datetime.now().isoformat()}")
+        lines.append(f"Total waste collected: {stats['total_waste_collected']:.2f}")
+
+        lines.append("• Average waste level for each bin:")
+        for bin_id, bin in self.bins.items():
+            lines.append(f"  - Bin {bin_id}: {bin['waste_level']:.2f}")
+
+        lines.append("• Time each waste bin was full:")
+        for bin_id, bin in self.bins.items():
+            full_time = bin.get("time_full", "Unknown")
+            lines.append(f"  - Bin {bin_id}: {full_time}")
+
+        # total_waste_left_outside = sum(bin.get("waste_left_outside", 0) for bin in self.bins.values())
+        # lines.append(f"• Total waste left outside the bin: {total_waste_left_outside:.2f}")
+
+        lines.append("• Distance traveled by each truck agent:")
+        for truck_id, truck in self.trucks.items():
+            lines.append(f"  - Truck {truck_id}: {truck.distance_traveled:.2f}")
+
+        lines.append(f"Total distance: {stats['total_distance_traveled']:.2f}")
+        lines.append("")  # Blank line for separation
+
+        with open("stats.txt", "w") as f:
+            f.write("\n".join(lines) + "\n")
 
     def add_bin(self, bin_id, bin):
         """
@@ -84,5 +127,6 @@ class Central:
             )
 
             # self.get_moment_statistics()
+            self.write_statistics()
             await asyncio.sleep(1)
         self.running = False
