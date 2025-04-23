@@ -10,9 +10,7 @@ from spade.agent import Agent
 class Truck(Agent):
     CAPACITY = 80
     VELOCITY = 5
-    
-    truck_number = 1
-    name = "truck"
+    name = None
 
     rec_behav = None
     msg_behav = None
@@ -30,10 +28,8 @@ class Truck(Agent):
             "capacity": self.CAPACITY, 
             "velocity": self.VELOCITY
         }
-        self.name = self.name + str(self.truck_number)
+        self.name = str(self.jid)
         self.location = None
-        Truck.truck_number += 1
-        self.name = self.name + str(Truck.truck_number)
         
     
     def updateLocation(self, location):

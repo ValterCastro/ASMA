@@ -4,7 +4,7 @@ from spade.agent import Agent
 from behavior import EmptyGarbage
 
 class Bin(Agent):
-    bin_number = 1
+    
     current_waste_lvl = 0
     capacity = 20
     name = None
@@ -27,16 +27,7 @@ class Bin(Agent):
         
     
     async def setup(self):
-        self.variables = {
-            "current_waste_lvl": self.current_waste_lvl,  
-        }
-        self.announcements = [Announcement(AnnouncementType.SET_VARIABLE_LESS_THAN_OR_EQUAL, "current_waste_lvl", 5)]
         
-        
-
-        Bin.bin_number += 1
-        
-        self.central.add_bin(self.name, self)
         
         self.empty_garbage_behav = EmptyGarbage(central=self.central)
         self.add_behaviour(self.empty_garbage_behav)

@@ -38,7 +38,7 @@ def main(central):
 
 
 async def gen_bins(central):
-    for i, node in zip(range(4), "ABCDEFGHIJKLMNOP"):
+    for i, node in zip(range(1), "ABCDEFGHIJKLMNOP"):
         bin_agent = Bin(f"asma@draugr.de/{i}", "1234", central=central, location=node)
         central.add_bin(bin_agent.name, bin_agent)
         NODES[node].bin = bin_agent
@@ -68,15 +68,18 @@ async def scenario_1(central):
     
     central.add_truck(truck_agent.name, truck_agent)
     
-    thread = threading.Thread(target=central.update_world, args=(2,), daemon=True)
-    thread.start()
+    # thread = threading.Thread(target=central.update_world, args=(2,), daemon=True)
+    # thread.start()
 
     await gen_bins(central)
+    
+    print(central.bins)
+    
 
     await asyncio.gather(*(bin["bin"].start() for bin in central.bins.values()))
 
-
-    # await wait_until_finished(truck_agent)
+    await asyncio.gather(*(wait_until_finished(bin["bin"]) for bin in central.bins.values()))
+    await wait_until_finished(truck_agent)
 
 async def scenario_2(central):
     # Scenario 2 logic here
