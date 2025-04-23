@@ -5,7 +5,7 @@ from behavior import EmptyGarbage
 
 
 class Bin(Agent):
-    current_waste_lvl = 0
+    current_waste_lvl = 20
     capacity = 20
     name = None
     is_manager = False
@@ -14,15 +14,15 @@ class Bin(Agent):
     rec_behav = None
     empty_garbage_behav = None
     inbox = []
-    filling_rate = 10
     location = None
 
-    def __init__(self, jid, password, central, location):
+    def __init__(self, jid, password, central, location, filling_rate_quantity):
         # Call parent constructor
         super().__init__(jid, password)
         self.central = central
         self.location = location
         self.name = str(self.jid.resource)
+        self.filling_rate = self.capacity * filling_rate_quantity
 
     async def setup(self):
         self.empty_garbage_behav = EmptyGarbage(central=self.central)

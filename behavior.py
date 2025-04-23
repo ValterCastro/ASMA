@@ -42,14 +42,12 @@ class EmptyGarbage(FSMBehaviour):
         self.add_transition(source=STATE_ONE, dest=STATE_TWO)
         self.add_transition(source=STATE_ONE, dest=STATE_THREE)
         self.add_transition(source=STATE_TWO, dest=STATE_ZERO)
+        self.add_transition(source=STATE_TWO, dest=STATE_ONE)
         self.add_transition(source=STATE_THREE, dest=STATE_FOUR)
         self.add_transition(source=STATE_FOUR, dest=STATE_FIVE)
         self.add_transition(source=STATE_FIVE, dest=STATE_ZERO)
 
-        # self.agent.inbox = []
-
-        # for truck in self.central.trucks.values():
-        #     truck.inbox = []
+       
 
     async def on_end(self):
         print(f"FSM finished at state {self.current_state}")
@@ -111,6 +109,12 @@ class StateZero(State):
         
         if self.behav.agent.current_waste_lvl >= self.behav.agent.capacity:
             print(f"0️⃣ Bin \033[31m{self.behav.agent.jid}\033[0m needs to be emptied")
+            
+            self.behav.agent.inbox = []
+
+            for truck in self.behav.central.trucks.values():
+                truck.inbox = []
+            
             self.set_next_state(STATE_ONE)
         else:
             print(f"0️⃣  Bin \033[31m{self.behav.agent.jid}\033[0m waiting to be full")
@@ -156,8 +160,9 @@ class StateOne(State):
                 self.behav.agent.current_waste_lvl
             )
             
+            
 
-            if available_truck_position:
+            if available_truck_position is not False:
                 self.behav.available_trucks[str(value.jid)] = value
                 print(self.behav.available_trucks)
 
@@ -226,6 +231,7 @@ class StateThree(State):
                 body="I PROPOSE",
             )
             truck.add_behaviour(truck.msg_behav)
+           
 
             self.behav.agent.rec_behav = RecvBehav(agent=self.behav.agent)
             self.behav.agent.add_behaviour(self.behav.agent.rec_behav)
@@ -258,10 +264,11 @@ class StateFour(State):
         recv_behaviors = []
         
         for msg in self.behav.agent.inbox:
-            if len(self.behav.central.trucks) > 0:
-                available_truck_nodes[
-                    self.behav.central.trucks[str(msg.sender)].location
-                ] = self.behav.central.trucks[str(msg.sender)]
+            if str(msg.body) == "I PROPOSE" :
+                if len(self.behav.central.trucks) > 0:
+                    available_truck_nodes[
+                        self.behav.central.trucks[str(msg.sender)].location
+                    ] = self.behav.central.trucks[str(msg.sender)]
                 
         distance = 0
         for key, value in available_truck_nodes.items():
@@ -288,11 +295,12 @@ class StateFour(State):
         for behav in recv_behaviors:
             await behav.join()
 
+        #print("BEST DISTANCE ---- - -- -- - -- -- - - --   - - - - -  - - --", best_distance)
         self.behav.winner.startTrip(
-            #np.floor(best_distance / self.behav.winner.VELOCITY),
-            5,
+            np.floor(best_distance / self.behav.winner.VELOCITY),
             best_distance,
         )
+        
 
         self.set_next_state(STATE_FIVE)
 

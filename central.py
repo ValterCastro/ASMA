@@ -58,7 +58,7 @@ class Central:
         """
         self.trucks[truck_id] = truck
 
-    async def update_world(self):
+    async def update_world(self, filling_rate_interval):
         self.start = time()
 
         print(
@@ -71,7 +71,8 @@ class Central:
 
         while time() - self.start < self.duration:
             for key, bin in self.bins.items():
-                bin["bin"].update()
+                if self.start - time() == filling_rate_interval:
+                    bin["bin"].update()
             for _, truck in self.trucks.items():
                 truck.update()
 

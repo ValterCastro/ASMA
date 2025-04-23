@@ -41,9 +41,8 @@ class Truck(Agent):
         self.is_busy = False
 
     def updateLocation(self, location):
-        #assert location is not None, "Location cannot be None"
         self.location = location
-        # print(f"Truck {self.name} updated location to {location}")
+        
 
     def getLocation(self):
         assert hasattr(self, "location"), "Truck must have a location attribute"
@@ -55,6 +54,7 @@ class Truck(Agent):
             if (
                 (self.current_waste_lvl + amount) <= self.CAPACITY
                 and self.cycles_to_destination == 0
+                and self.is_busy is False
             )
             else False
         )
