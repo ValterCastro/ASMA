@@ -8,6 +8,7 @@ import threading
 from central import Central
 from bin import Bin
 from truck import Truck
+from helper import clear
 
 import time
 import logging
@@ -22,7 +23,8 @@ NODES = {}
 EDGES = {}
 BINS = []
 
-def main(central):
+
+def main():
     while True:
         options = ["Scenario 1", "Scenario 2", "Scenario 3"]
         terminal_menu = TerminalMenu(options)
@@ -30,11 +32,11 @@ def main(central):
         selection = options[menu_entry_index]
 
         if selection == "Scenario 1":
-            spade.run(scenario_1(central))
+            spade.run(scenario_1())
         elif selection == "Scenario 2":
-            spade.run(scenario_2(central))
+            spade.run(scenario_2())
         elif selection == "Scenario 3":
-            spade.run(scenario_3(central))
+            spade.run(scenario_3())
 
 
 async def gen_bins(central):
@@ -43,11 +45,13 @@ async def gen_bins(central):
         central.add_bin(bin_agent.name, bin_agent)
         NODES[node].bin = bin_agent
         BINS.append(bin_agent)
-        
+
+
 def get_rand_bins(bins, n):
     return random.sample(bins, n)
 
-async def scenario_1(central):
+
+async def scenario_1():
     """
     Scenario 1:
     • Bin filling rate (time interval): every 300 seconds (ensure that the bin fills up once and only
@@ -56,30 +60,35 @@ async def scenario_1(central):
     • Number of Trucks: 1
     • End of simulation: 240 seconds
     """
-    
-    
+
+    central = Central(NODES, 5)
+
     truck_agent = Truck("asma@draugr.de/10", "1234")
     await truck_agent.start(auto_register=True)
-    
+
     NODES["X"].truck = truck_agent
     truck_agent.location = "X"
 
     await asyncio.sleep(1)
-    
+
     central.add_truck(truck_agent.name, truck_agent)
-    
-    # thread = threading.Thread(target=central.update_world, args=(2,), daemon=True)
-    # thread.start()
 
     await gen_bins(central)
-    
-    print(central.bins)
-    
 
     await asyncio.gather(*(bin["bin"].start() for bin in central.bins.values()))
 
-    await asyncio.gather(*(wait_until_finished(bin["bin"]) for bin in central.bins.values()))
-    await wait_until_finished(truck_agent)
+    thread = threading.Thread(target=central.update_world, daemon=True)
+    thread.start()
+
+    while central.running:
+        pass
+
+    await asyncio.gather(*(bin["bin"].stop() for bin in central.bins.values()))
+    await truck_agent.stop()
+
+    input(">")
+    clear()
+
 
 async def scenario_2(central):
     # Scenario 2 logic here
@@ -121,11 +130,8 @@ def read_graph():
 
 
 if __name__ == "__main__":
-
-
     # Read the graph from the file and populate NODES and EDGES
     read_graph()
-    central = Central(NODES)
 
     # Run the menu function
-    main(central)
+    main()
