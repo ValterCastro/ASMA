@@ -55,7 +55,7 @@ class Central:
 
     def update_world(self, interval):
         self.start = time()
-        while self.running:
+        while time() - self.start < self.duration:
             for key, bin in self.bins.items():
                 bin.update()
             for _, truck in self.trucks.items():
@@ -66,8 +66,8 @@ class Central:
                 + "".join(
                     f"\033[34mBin {bin.name}: {progress_bar(bin.current_waste_lvl / bin.capacity)}\033[0m\n"
                     for bin in self.bins.values()
-                    )
                 )
+            )
 
-
+            # self.get_moment_statistics()
             sleep(interval)

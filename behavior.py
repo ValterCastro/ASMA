@@ -140,7 +140,6 @@ class StateOne(State):
         print(
             f"1️⃣  Bin \033[31m{self.agent.jid}\033[0m is full - Call for trucks proposals"
         )
-        self.set_next_state(STATE_THREE)
 
         recv_behaviors = []
 
@@ -164,7 +163,6 @@ class StateOne(State):
 
             if available_truck_position:
                 self.available_trucks[str(value.jid)] = value
-
             else:
                 value.msg_behav = InformBehav(
                     agent=value.jid,
@@ -177,13 +175,10 @@ class StateOne(State):
         for behav in recv_behaviors:
             await behav.join()
 
-        print(f"\033[31m[DEBUG]\033[0m Bin {self.agent.jid} {self.available_trucks}")
-
-        if len(self.available_trucks) == 0:
-            self.set_next_state(STATE_TWO)
-
-        else:
+        if self.available_trucks:
             self.set_next_state(STATE_THREE)
+        else:
+            self.set_next_state(STATE_TWO)
 
 
 class StateTwo(State):
@@ -264,16 +259,13 @@ class StateFour(State):
         available_truck_nodes = {}
 
         recv_behaviors = []
-        
-        
+
         real_msgs = [msg for msg in self.agent.inbox if msg is not None]
 
         for msg in real_msgs:
-            
+
             sender_jid = str(msg.sender)
             if sender_jid in self.trucks:
-
-            
 
                 available_truck_nodes[self.trucks[str(msg.sender)].location] = (
                     self.trucks[str(msg.sender)]

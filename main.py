@@ -20,7 +20,6 @@ from simple_term_menu import TerminalMenu
 
 NODES = {}
 EDGES = {}
-BINS = []
 
 
 def main():
@@ -31,26 +30,27 @@ def main():
         selection = options[menu_entry_index]
 
         if selection == "Scenario 1":
-            spade.run(scenario_1(Central(NODES, 240)))
+            spade.run(scenario_1())
         elif selection == "Scenario 2":
-            spade.run(scenario_2(Central(NODES, 240)))
+            spade.run(scenario_2())
         elif selection == "Scenario 3":
-            spade.run(scenario_3(Central(NODES, 120)))
+            spade.run(scenario_3())
 
 
 async def gen_bins(central):
+    bins = []
     for i, node in zip(range(4), "ABCDEFGHIJKLMNOP"):
         bin_agent = Bin(f"asma@draugr.de/{i}", "1234", central=central, location=node)
-        central.add_bin(bin_agent.name, bin_agent)
         NODES[node].bin = bin_agent
-        BINS.append(bin_agent)
+        bins.append(bin_agent)
+    return bins
 
 
 def get_rand_bins(bins, n):
     return random.sample(bins, n)
 
 
-async def scenario_1(central):
+async def scenario_1():
     """
     Scenario 1:
     • Bin filling rate (time interval): every 300 seconds (ensure that the bin fills up once and only
@@ -60,32 +60,37 @@ async def scenario_1(central):
     • End of simulation: 240 seconds
     """
 
-    truck_agent = Truck("asma@draugr.de/10", "1234")
-    await truck_agent.start(auto_register=True)
+    # Problem Setup
 
-    NODES["X"].truck = truck_agent
-    truck_agent.location = "X"
+    ## Central Setup
+    central = Central(NODES, 240)
 
-    central.add_truck(truck_agent.name, truck_agent)
+    ## Truck Setup
+    truck = Truck("asma@draugr.de/10", "1234")
+    await truck.start(auto_register=True)
+    NODES["X"].truck = truck
+    truck.location = "X"
 
-    await gen_bins(central)
+    central.add_truck(truck.name, truck)
 
-    await asyncio.sleep(3)
+    ## Bin Setup
+    bins = get_rand_bins(await gen_bins(central), 1)
+    for bin in bins:
+        central.add_bin(bin.name, bin)
 
     await asyncio.gather(*(bin.start() for bin in central.bins.values()))
-
-    await asyncio.sleep(3)
 
     thread = threading.Thread(target=central.update_world, args=(2,), daemon=True)
     thread.start()
 
-    central.running = False
-    thread.join()
+    # thread.join()
+    while central.running:
+        await asyncio.sleep(1)
 
     # await wait_until_finished(truck_agent)
 
 
-async def scenario_2(central):
+async def scenario_2():
     """
     Scenario 2:
     • Bin filling rate (time interval): every 300 seconds (ensure that the bin fills up once and only
@@ -97,7 +102,7 @@ async def scenario_2(central):
     await main()
 
 
-async def scenario_3(central):
+async def scenario_3():
     """
     Scenario 3:
     • Bin filling rate (time interval): every 4 seconds
