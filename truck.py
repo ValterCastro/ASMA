@@ -72,10 +72,11 @@ class Truck(Agent):
         )
 
     def update(self):
-        print(f"🚚 {self.jid}: \033[34m{self.cycles_left}/ {self.trip_cycles}\033[0m")
-        # print(
-        #     f"🚚: \033[34m{progress_bar(1 - self.cycles_left / self.trip_cycles)}\033[0m"
-        # )
+        print(
+            f"🚚: \033[34m{progress_bar(1 - self.cycles_left / self.trip_cycles)}\033[0m"
+            if self.cycles_left
+            else f"🚚: 🛑"
+        )
         if self.is_busy and self.cycles_left > 0:
             self.cycles_left -= 1
         else:

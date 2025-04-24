@@ -86,7 +86,7 @@ class RecvBehav(OneShotBehaviour):
 
     async def run(self):
 
-        msg = await self.receive(timeout=10)  # wait for a message for 10 seconds
+        msg = await self.receive(timeout=3)  # wait for a message for 3 seconds
         self.agent.inbox.append(msg)
 
         # print(f"\033[34m💬 {self.agent.jid} ⬅️ o : {msg}\033[0m")
@@ -254,8 +254,9 @@ class StateFour(State):
         recv_behaviors = []
 
         print(
-            f"\n📥 Received messages: {[f"{x.sender}: {x.body} " for x in self.behav.agent.inbox]}\n\n"
+            f"\n📥 Received messages: {[f"{x.sender}: {x.body} " for x in self.behav.agent.inbox]}\n"
         )
+
         for msg in self.behav.agent.inbox:
             if str(msg.body).startswith("I PROPOSE"):
                 print(
@@ -265,7 +266,6 @@ class StateFour(State):
                     available_truck_nodes[
                         self.behav.central.trucks[str(msg.sender)].location
                     ] = self.behav.central.trucks[str(msg.sender)]
-        self.behav.agent.inbox = []
 
         distance = 0
         for key, value in available_truck_nodes.items():
