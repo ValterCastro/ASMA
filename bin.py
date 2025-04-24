@@ -37,6 +37,7 @@ class Bin(Agent):
         """
         Empties the garbage in the bin.
         """
+        self.central.total_waste_collected += self.current_waste_lvl
         self.current_waste_lvl = 0
         self.current_message_type = ""
 

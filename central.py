@@ -33,10 +33,10 @@ class Central:
             [truck.distance_traveled for truck in self.trucks.values()]
         )
         self.average_waste_level = (
-            sum([bin["waste_level"] for bin in self.bins.values()]) / len(self.bins)
-            if self.bins
-            else 0
-        )
+        sum([bin["waste_total"] for bin in self.bins.values()]) / self.duration
+        if self.bins
+        else 0
+    )
 
         statistics = {
             "total_waste_collected": self.total_waste_collected,
@@ -67,7 +67,8 @@ class Central:
 
         lines.append("• Average waste level for each bin:")
         for bin_id, bin in self.bins.items():
-            lines.append(f"  - Bin {bin_id}: {bin['waste_level']:.2f}")
+            avg = bin["waste_total"] / self.duration
+            lines.append(f"  - Bin {bin_id}: {avg:.2f}")
 
         lines.append("• Time each waste bin was full:")
         for bin_id, bin in self.bins.items():
@@ -95,6 +96,7 @@ class Central:
             "bin": bin,
             "waste_level": 0,
             "time_full": 0,
+            "waste_total": 0,
         }
 
     def add_truck(self, truck_id, truck):
@@ -108,10 +110,22 @@ class Central:
         self.next_update = self.start + filling_rate_interval
 
         while time() - self.start < self.duration:
-            for key, bin in self.bins.items():
-                if self.start >= self.next_update:
-                    bin["bin"].update()
-                    self.next_update += filling_rate_interval
+            for bin_id, bin_entry in self.bins.items():
+                bin_obj = bin_entry["bin"]
+
+                # Update bin only on defined intervals
+                if int(time() - self.start) % filling_rate_interval == 0:
+                    bin_obj.update()
+
+                # Update tracked waste level
+                bin_entry["waste_level"] = bin_obj.current_waste_lvl
+
+                bin_entry["waste_total"] += bin_obj.current_waste_lvl
+
+                # Increment time_full only if bin is full
+                if bin_obj.current_waste_lvl >= bin_obj.capacity:
+                    bin_entry["time_full"] += 1
+
             for _, truck in self.trucks.items():
                 truck.update()
 
