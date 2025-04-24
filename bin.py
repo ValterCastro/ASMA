@@ -42,6 +42,8 @@ class Bin(Agent):
         self.current_message_type = ""
 
     def update(self):
+        
         self.current_waste_lvl = min(
             self.current_waste_lvl + self.filling_rate, self.capacity
         )
+        print("CURRENT WASTE LVL", self.current_waste_lvl)

@@ -41,9 +41,7 @@ def main():
 
 
 async def gen_bins(central, filling_rate_quantity):
-    for i, node in zip(range(len("ABCDEFGHIJKLMNOP")), "ABCDEFGHIJKLMNOP"):
     # for i, node in zip(range(len("AB")), "ABCDEFGHIJKLMNOP"):
-    # for i, node in zip(range(1), "ABCDEFGHIJKLMNOP"):
         bin_agent = Bin(
             f"asma@draugr.de/{i}",
             "1234",
