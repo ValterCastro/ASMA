@@ -35,10 +35,10 @@ class Central:
             [truck.distance_traveled for truck in self.trucks.values()]
         )
         self.average_waste_level = (
-            sum([bin["waste_level"] for bin in self.bins.values()]) / len(self.bins)
-            if self.bins
-            else 0
-        )
+        sum([bin["waste_total"] for bin in self.bins.values()]) / self.duration
+        if self.bins
+        else 0
+    )
 
         statistics = {
             "total_waste_collected": self.total_waste_collected,
@@ -69,7 +69,8 @@ class Central:
 
         lines.append("• Average waste level for each bin:")
         for bin_id, bin in self.bins.items():
-            lines.append(f"  - Bin {bin_id}: {bin['waste_level']:.2f}")
+            avg = bin["waste_total"] / self.duration
+            lines.append(f"  - Bin {bin_id}: {avg:.2f}")
 
         lines.append("• Time each waste bin was full:")
         for bin_id, bin in self.bins.items():
@@ -97,6 +98,7 @@ class Central:
             "bin": bin,
             "waste_level": 0,
             "time_full": 0,
+            "waste_total": 0,
         }
 
     def add_truck(self, truck_id, truck):
@@ -106,31 +108,53 @@ class Central:
         self.trucks[truck_id] = truck
 
     async def update_world(self, filling_rate_interval):
-        self.start = time()
-        self.next_update = self.start + filling_rate_interval
-        
-        
-        while time() - self.start < self.duration:
-            now = time()
-            print("delta to next update:", now - self.next_update)
-            
-            if  now >= self.next_update:
-                for key, bin in self.bins.items():
-                        bin["bin"].update()
-                        self.next_update += filling_rate_interval
-                    
-            for _, truck in self.trucks.items():
-                truck.update()
+      self.start = time()
+      self.next_update = self.start + filling_rate_interval
 
-            print(
-                f"\n\033[32m⊞ [{round(time() - self.start)} / {self.duration} seconds] Updating world...\033[0m\n"
-                + "".join(
-                    f"\033[34mBin {bin['bin'].name}: {progress_bar(bin['bin'].current_waste_lvl / bin['bin'].capacity)}\033[0m\n"
-                    for bin in self.bins.values()
-                )
-            )
+      while time() - self.start < self.duration:
+          now = time()
+          print("delta to next update:", now - self.next_update)
 
-            # self.get_moment_statistics()
-            self.write_statistics()
-            await asyncio.sleep(1)
-        self.running = False
+          # Update bin levels only at intervals
+          if now >= self.next_update:
+              for bin_id, bin_entry in self.bins.items():
+                  bin_obj = bin_entry["bin"]
+                  bin_obj.update()
+              self.next_update += filling_rate_interval
+
+          # Update stats every second
+          for bin_id, bin_entry in self.bins.items():
+              bin_obj = bin_entry["bin"]
+
+              # Current waste level (for latest snapshot)
+              bin_entry["waste_level"] = bin_obj.current_waste_lvl
+
+              # Accumulate total waste level for avg computation
+              bin_entry.setdefault("waste_total", 0)
+              bin_entry["waste_total"] += bin_obj.current_waste_lvl
+
+              # Time tracked
+              bin_entry.setdefault("time_tracked", 0)
+              bin_entry["time_tracked"] += 1
+
+              # Time the bin is full
+              if bin_obj.current_waste_lvl >= bin_obj.capacity:
+                  bin_entry.setdefault("time_full", 0)
+                  bin_entry["time_full"] += 1
+
+          for _, truck in self.trucks.items():
+              truck.update()
+
+          print(
+              f"\n\033[32m⊞ [{round(time() - self.start)} / {self.duration} seconds] Updating world...\033[0m\n"
+              + "".join(
+                  f"\033[34mBin {bin['bin'].name}: {progress_bar(bin['bin'].current_waste_lvl / bin['bin'].capacity)}\033[0m\n"
+                  for bin in self.bins.values()
+              )
+          )
+
+          self.write_statistics()
+          await asyncio.sleep(1)
+
+      self.running = False
+
