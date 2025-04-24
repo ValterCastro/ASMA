@@ -1,0 +1,41 @@
+Timestamp: 2025-04-24T03:37:50.966603
+Total waste collected: 0.00
+• Average waste level for each bin:
+  - Bin 0: 0.00
+  - Bin 1: 0.00
+  - Bin 2: 0.00
+  - Bin 3: 0.00
+  - Bin 4: 0.00
+  - Bin 5: 0.00
+  - Bin 6: 0.00
+  - Bin 7: 0.00
+  - Bin 8: 0.00
+  - Bin 9: 0.00
+  - Bin 10: 0.00
+  - Bin 11: 0.00
+  - Bin 12: 0.00
+  - Bin 13: 0.00
+  - Bin 14: 0.00
+  - Bin 15: 0.00
+• Time each waste bin was full:
+  - Bin 0: 0
+  - Bin 1: 0
+  - Bin 2: 0
+  - Bin 3: 0
+  - Bin 4: 0
+  - Bin 5: 0
+  - Bin 6: 0
+  - Bin 7: 0
+  - Bin 8: 0
+  - Bin 9: 0
+  - Bin 10: 0
+  - Bin 11: 0
+  - Bin 12: 0
+  - Bin 13: 0
+  - Bin 14: 0
+  - Bin 15: 0
+• Distance traveled by each truck agent:
+  - Truck asma@draugr.de/100: 826.11
+  - Truck asma@draugr.de/101: 0.00
+Total distance: 826.11
+

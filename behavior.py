@@ -47,8 +47,6 @@ class EmptyGarbage(FSMBehaviour):
         self.add_transition(source=STATE_FOUR, dest=STATE_FIVE)
         self.add_transition(source=STATE_FIVE, dest=STATE_ZERO)
 
-       
-
     async def on_end(self):
         print(f"FSM finished at state {self.current_state}")
         await self.agent.stop()
@@ -64,7 +62,10 @@ class InformBehav(OneShotBehaviour):
         self.metadata = metadata
 
     async def run(self):
-        print("InformBehav running")
+        print(
+            f"\033[34m💬 {self.agent.jid} ➡️  {self.receiver_address.jid}: {self.body}\033[0m"
+        )
+
         msg = Message(to=str(self.receiver_address))  # Instantiate the message
 
         if self.metadata is not None:
@@ -73,7 +74,6 @@ class InformBehav(OneShotBehaviour):
         msg.body = self.body
 
         await self.send(msg)
-        print("Message sent!")
 
         self.exit_code = "Job Finished!"
 
@@ -85,15 +85,11 @@ class RecvBehav(OneShotBehaviour):
         self.agent = agent
 
     async def run(self):
-        print("RecvBehav running")
 
         msg = await self.receive(timeout=10)  # wait for a message for 10 seconds
         self.agent.inbox.append(msg)
 
-        if msg:
-            print("Message received with content: {}".format(msg.body))
-        else:
-            print("Did not received any message after 10 seconds")
+        # print(f"\033[34m💬 {self.agent.jid} ⬅️ o : {msg}\033[0m")
 
 
 class StateZero(State):
@@ -106,18 +102,19 @@ class StateZero(State):
         self.behav = behav
 
     async def run(self):
-        
+
+        # async with self.behav.agent.lock:
         if self.behav.agent.current_waste_lvl >= self.behav.agent.capacity:
-            print(f"0️⃣ Bin \033[31m{self.behav.agent.jid}\033[0m needs to be emptied")
-            
+            print(f"0️⃣  🗑️ \033[31m{self.behav.agent.jid}\033[0m needs to be emptied")
+
             self.behav.agent.inbox = []
 
             for truck in self.behav.central.trucks.values():
                 truck.inbox = []
-            
+
             self.set_next_state(STATE_ONE)
         else:
-            print(f"0️⃣  Bin \033[31m{self.behav.agent.jid}\033[0m waiting to be full")
+            print(f"0️⃣  🗑️ \033[31m{self.behav.agent.jid}\033[0m waiting to be full")
             await asyncio.sleep(3)
             self.set_next_state(STATE_ZERO)
 
@@ -133,14 +130,12 @@ class StateOne(State):
 
     async def run(self):
         print(
-            f"1️⃣  Bin \033[31m{self.behav.agent.jid}\033[0m is full - Call for trucks proposals"
+            f"1️⃣  🗑️ \033[31m{self.behav.agent.jid}\033[0m is full - Call for trucks proposals"
         )
 
         recv_behaviors = []
 
         for key, value in self.behav.central.trucks.items():
-            
-
 
             data = {"location": self.agent.location}
 
@@ -159,17 +154,13 @@ class StateOne(State):
             available_truck_position = value.isAvailable(
                 self.behav.agent.current_waste_lvl
             )
-            
-            
 
-            if available_truck_position is not False:
+            if available_truck_position:
                 self.behav.available_trucks[str(value.jid)] = value
-                print(self.behav.available_trucks)
-
             else:
                 value.msg_behav = InformBehav(
                     agent=value.jid,
-                    receiver_address=self.behav.agent,
+                    receiver_address=self.behav.agent.jid,
                     metadata=None,
                     body="REFUSE",
                 )
@@ -199,6 +190,7 @@ class StateTwo(State):
             f"2️⃣  \033[31m{self.agent.jid}\033[0m - No trucks available - all refused call for proposals"
         )
 
+        await asyncio.sleep(3)
         self.set_next_state(STATE_ONE)
 
 
@@ -213,7 +205,7 @@ class StateThree(State):
 
     async def run(self):
         print(
-            f"3️⃣  Bin \033[31m{self.behav.agent.jid}\033[0m - At least one truck is available"
+            f"3️⃣  🗑️  \033[31m{self.behav.agent.jid}\033[0m - At least one truck is available"
         )
 
         recv_behaviors = []
@@ -224,14 +216,14 @@ class StateThree(State):
                 "location": truck.location,
             }
 
+            print(f"🔨💬    🚚  \033[31m{truck.jid}\033[0m")
             truck.msg_behav = InformBehav(
                 agent=truck.jid,
                 receiver_address=self.behav.agent.jid,
                 metadata=data,
-                body="I PROPOSE",
+                body=f"I PROPOSE",
             )
             truck.add_behaviour(truck.msg_behav)
-           
 
             self.behav.agent.rec_behav = RecvBehav(agent=self.behav.agent)
             self.behav.agent.add_behaviour(self.behav.agent.rec_behav)
@@ -253,32 +245,38 @@ class StateFour(State):
         self.behav = behav
 
     async def run(self):
-        print(
-            f" 4️⃣  Bin \033[31m{self.behav.agent.jid}\033[0m - Bin accepts the proposal"
-        )
+        print(f"4️⃣  🗑️  \033[31m{self.behav.agent.jid}\033[0m - Checking proposals... ⏳")
 
         best_distance = np.inf
 
         available_truck_nodes = {}
 
         recv_behaviors = []
-        
+
+        print(
+            f"\n📥 Received messages: {[f"{x.sender}: {x.body} " for x in self.behav.agent.inbox]}\n\n"
+        )
         for msg in self.behav.agent.inbox:
-            if str(msg.body) == "I PROPOSE" :
+            if str(msg.body).startswith("I PROPOSE"):
+                print(
+                    f"4️⃣  🗑️  \033[31m{self.behav.agent.jid}\033[0m received proposal from 🚚 \033[31m{self.behav.central.trucks[str(msg.sender)].jid}\033[0m"
+                )
                 if len(self.behav.central.trucks) > 0:
                     available_truck_nodes[
                         self.behav.central.trucks[str(msg.sender)].location
                     ] = self.behav.central.trucks[str(msg.sender)]
-                
+        self.behav.agent.inbox = []
+
         distance = 0
         for key, value in available_truck_nodes.items():
+            print(f"DIJKSTRA CYCLE: {value.jid}")
             distance = dijkstra(
                 key, self.behav.agent.location, self.behav.central.nodes
             )
-            if best_distance > distance:
+            if best_distance > distance and not value.is_busy:
                 best_distance = distance
                 self.behav.winner = value
-                print("Winner", self.behav.winner)
+                self.behav.winner.is_busy = True
 
         self.behav.agent.msg_behav = InformBehav(
             agent=self.behav.agent,
@@ -295,12 +293,11 @@ class StateFour(State):
         for behav in recv_behaviors:
             await behav.join()
 
-        #print("BEST DISTANCE ---- - -- -- - -- -- - - --   - - - - -  - - --", best_distance)
         self.behav.winner.startTrip(
             np.floor(best_distance / self.behav.winner.VELOCITY),
             best_distance,
         )
-        
+        self.behav.agent.empty_garbage()
 
         self.set_next_state(STATE_FIVE)
 
@@ -316,18 +313,15 @@ class StateFive(State):
 
     async def run(self):
         print(
-            f"5️⃣  \033[31m{self.behav.agent.jid}\033[0m - Truck assigned: {self.behav.winner}"
+            f"5️⃣  \033[31m{self.behav.agent.jid}\033[0m - Assigned 🚚 {self.behav.winner.jid} to: {self.behav.winner.location} ➡️  {self.behav.agent.location}"
         )
-        
-        print(self.behav.agent.location)
 
-        print(f"\033[31m[DEBUG]\033[0m - Location before: {self.behav.winner.location}")
-        while self.behav.winner.cycles_to_destination > 0:
+        while self.behav.winner.cycles_left > 0:
             print(
                 f"5️⃣  \033[31m{self.behav.agent.jid}\033[0m - Truck has not reached the destination yet"
             )
             await asyncio.sleep(2)
-            
+
         await asyncio.sleep(1)
 
         if self.behav.winner.is_busy is False:

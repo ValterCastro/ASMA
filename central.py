@@ -30,29 +30,31 @@ class Central:
         Returns the current statistics of the central system.
         """
         self.total_distance_traveled = sum(
-        [truck.distance_traveled for truck in self.trucks.values()]
-    )
+            [truck.distance_traveled for truck in self.trucks.values()]
+        )
         self.average_waste_level = (
             sum([bin["waste_level"] for bin in self.bins.values()]) / len(self.bins)
-            if self.bins else 0
+            if self.bins
+            else 0
         )
 
         statistics = {
             "total_waste_collected": self.total_waste_collected,
             "average_waste_level": self.average_waste_level,
             "waste_full_times": {
-                bin_id: bin.get("time_full", "Unknown") for bin_id, bin in self.bins.items()
+                bin_id: bin.get("time_full", "Unknown")
+                for bin_id, bin in self.bins.items()
             },
             # "waste_outside_bin": self.total_waste_outside,
             "truck_distances": {
-                truck_id: truck.distance_traveled for truck_id, truck in self.trucks.items()
+                truck_id: truck.distance_traveled
+                for truck_id, truck in self.trucks.items()
             },
             "total_distance_traveled": self.total_distance_traveled,
         }
 
         return statistics
 
-    
     def write_statistics(self):
         """
         Writes the current system statistics to stats.txt in a human-readable format.
@@ -104,14 +106,6 @@ class Central:
     async def update_world(self, filling_rate_interval):
         self.start = time()
 
-        print(
-            f"""\n\033[32m⊞ World update setup: {time() - self.start < self.duration}\033[0m\n
-            start: {self.start}
-            time-start: {time()}
-            duration: {self.duration}
-            """
-        )
-
         while time() - self.start < self.duration:
             for key, bin in self.bins.items():
                 if self.start - time() == filling_rate_interval:
@@ -120,7 +114,7 @@ class Central:
                 truck.update()
 
             print(
-                f"\n\033[32m⊞ [{round(time() - self.start)} seconds] Updating world...\033[0m\n"
+                f"\n\033[32m⊞ [{round(time() - self.start)} / {self.duration} seconds] Updating world...\033[0m\n"
                 + "".join(
                     f"\033[34mBin {bin['bin'].name}: {progress_bar(bin['bin'].current_waste_lvl / bin['bin'].capacity)}\033[0m\n"
                     for bin in self.bins.values()
