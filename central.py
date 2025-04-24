@@ -24,6 +24,8 @@ class Central:
         self.trucks = {}
         self.nodes = nodes
         self.duration = duration
+        
+        
 
     def get_moment_statistics(self):
         """
@@ -106,12 +108,17 @@ class Central:
     async def update_world(self, filling_rate_interval):
         self.start = time()
         self.next_update = self.start + filling_rate_interval
-
+        
+        
         while time() - self.start < self.duration:
-            for key, bin in self.bins.items():
-                if self.start >= self.next_update:
-                    bin["bin"].update()
-                    self.next_update += filling_rate_interval
+            now = time()
+            print("delta to next update:", now - self.next_update)
+            
+            if  now >= self.next_update:
+                for key, bin in self.bins.items():
+                        bin["bin"].update()
+                        self.next_update += filling_rate_interval
+                    
             for _, truck in self.trucks.items():
                 truck.update()
 
