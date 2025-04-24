@@ -105,11 +105,13 @@ class Central:
 
     async def update_world(self, filling_rate_interval):
         self.start = time()
+        self.next_update = self.start + filling_rate_interval
 
         while time() - self.start < self.duration:
             for key, bin in self.bins.items():
-                if self.start - time() == filling_rate_interval:
+                if self.start >= self.next_update:
                     bin["bin"].update()
+                    self.next_update += filling_rate_interval
             for _, truck in self.trucks.items():
                 truck.update()
 

@@ -36,11 +36,14 @@ def main():
         elif selection == "Scenario 2":
             spade.run(scenario(2, 1, 300, 240))
         elif selection == "Scenario 3":
-            spade.run(scenario(2, 0.20, 4, 120))
+            #spade.run(scenario(2, 0.20, 4, 120))
+            spade.run(scenario(2, 0.20, 4, 400))
 
 
 async def gen_bins(central, filling_rate_quantity):
-    for i, node in zip(range(len("ABCDEFGHIJKLMNOP")), "ABCDEFGHIJKLMNOP"):
+    #for i, node in zip(range(len("ABCDEFGHIJKLMNOP")), "ABCDEFGHIJKLMNOP"):
+    for i, node in zip(range(len("AB")), "ABCDEFGHIJKLMNOP"):
+    # for i, node in zip(range(1), "ABCDEFGHIJKLMNOP"):
         bin_agent = Bin(
             f"asma@draugr.de/{i}",
             "1234",

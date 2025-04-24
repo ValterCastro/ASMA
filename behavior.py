@@ -63,7 +63,7 @@ class InformBehav(OneShotBehaviour):
 
     async def run(self):
         print(
-            f"\033[34m💬 {self.agent.jid} ➡️  {self.receiver_address.jid}: {self.body}\033[0m"
+            f"\033[34m💬 {self.agent.jid} ➡️  {self.receiver_address}: {self.body}\033[0m"
         )
 
         msg = Message(to=str(self.receiver_address))  # Instantiate the message
@@ -102,15 +102,17 @@ class StateZero(State):
         self.behav = behav
 
     async def run(self):
+        
+        await asyncio.sleep(int(self.behav.agent.jid.resource))
 
         # async with self.behav.agent.lock:
         if self.behav.agent.current_waste_lvl >= self.behav.agent.capacity:
             print(f"0️⃣  🗑️ \033[31m{self.behav.agent.jid}\033[0m needs to be emptied")
 
-            self.behav.agent.inbox = []
+            # self.behav.agent.inbox = []
 
-            for truck in self.behav.central.trucks.values():
-                truck.inbox = []
+            # for truck in self.behav.central.trucks.values():
+            #     truck.inbox = []
 
             self.set_next_state(STATE_ONE)
         else:
@@ -154,6 +156,7 @@ class StateOne(State):
             available_truck_position = value.isAvailable(
                 self.behav.agent.current_waste_lvl
             )
+            print(value.jid, available_truck_position)
 
             if available_truck_position:
                 self.behav.available_trucks[str(value.jid)] = value
@@ -165,6 +168,11 @@ class StateOne(State):
                     body="REFUSE",
                 )
                 value.add_behaviour(value.msg_behav)
+                
+        for msg in self.behav.agent.inbox:
+            if msg.body == "I REFUSE":
+                del self.behav.available_trucks[str(msg.sender)]
+        
 
         for behav in recv_behaviors:
             await behav.join()
@@ -210,7 +218,7 @@ class StateThree(State):
 
         recv_behaviors = []
 
-        for key, truck in self.behav.central.trucks.items():
+        for key, truck in self.behav.available_trucks.items():
 
             data = {
                 "location": truck.location,
@@ -227,10 +235,18 @@ class StateThree(State):
 
             self.behav.agent.rec_behav = RecvBehav(agent=self.behav.agent)
             self.behav.agent.add_behaviour(self.behav.agent.rec_behav)
-            recv_behaviors.append(self.behav.agent.rec_behav)
+            await self.behav.agent.rec_behav.join()
+            #recv_behaviors.append(self.behav.agent.rec_behav)
+            
+        
 
-        for behav in recv_behaviors:
-            await behav.join()
+        # for behav in recv_behaviors:
+        #     await behav.join()
+            
+        #print(self.behav.agent.inbox)
+        for msg in self.behav.agent.inbox:
+            
+            print("MESSAGE", msg.sender, msg.body)
 
         self.set_next_state(STATE_FOUR)
 
@@ -253,29 +269,34 @@ class StateFour(State):
 
         recv_behaviors = []
 
-        print(
-            f"\n📥 Received messages: {[f"{x.sender}: {x.body} " for x in self.behav.agent.inbox]}\n"
-        )
+        # print(
+        #     f"\n📥 Received messages: {[f"{x.sender}: {x.body} " for x in self.behav.agent.inbox]}\n"
+        # )
 
         for msg in self.behav.agent.inbox:
             if str(msg.body).startswith("I PROPOSE"):
                 print(
-                    f"4️⃣  🗑️  \033[31m{self.behav.agent.jid}\033[0m received proposal from 🚚 \033[31m{self.behav.central.trucks[str(msg.sender)].jid}\033[0m"
+                    f"4️⃣  🗑️  \033[31m{self.behav.agent.jid}\033[0m received proposal from 🚚 \033[31m{self.behav.available_trucks[str(msg.sender)].jid}\033[0m"
                 )
                 if len(self.behav.central.trucks) > 0:
                     available_truck_nodes[
-                        self.behav.central.trucks[str(msg.sender)].location
+                        (self.behav.central.trucks[str(msg.sender)].location, msg.sender)
                     ] = self.behav.central.trucks[str(msg.sender)]
 
+        print("AVAIL -- -- - - - - - -  ", available_truck_nodes)
         distance = 0
         for key, value in available_truck_nodes.items():
             print(f"DIJKSTRA CYCLE: {value.jid}")
             distance = dijkstra(
-                key, self.behav.agent.location, self.behav.central.nodes
+                key[0], self.behav.agent.location, self.behav.central.nodes
             )
             if best_distance > distance and not value.is_busy:
                 best_distance = distance
                 self.behav.winner = value
+                for msg in self.behav.agent.inbox:
+                    if str(msg.sender) == str(self.behav.winner.jid):
+                        self.behav.agent.inbox.remove(msg)
+                
                 self.behav.winner.is_busy = True
 
         self.behav.agent.msg_behav = InformBehav(
@@ -288,16 +309,16 @@ class StateFour(State):
 
         self.behav.winner.rec_behav = RecvBehav(agent=self.behav.winner)
         self.behav.winner.add_behaviour(self.behav.winner.rec_behav)
-        recv_behaviors.append(self.behav.winner.rec_behav)
-
-        for behav in recv_behaviors:
-            await behav.join()
+        #recv_behaviors.append(self.behav.winner.rec_behav)
+        await self.behav.winner.rec_behav.join()
+        # for behav in recv_behaviors:
+        #     await behav.join()
 
         self.behav.winner.startTrip(
             np.floor(best_distance / self.behav.winner.VELOCITY),
             best_distance,
         )
-        self.behav.agent.empty_garbage()
+        
 
         self.set_next_state(STATE_FIVE)
 
@@ -323,6 +344,8 @@ class StateFive(State):
             await asyncio.sleep(2)
 
         await asyncio.sleep(1)
+        
+        self.behav.agent.empty_garbage()
 
         if self.behav.winner.is_busy is False:
             self.behav.winner.location = self.behav.agent.location
